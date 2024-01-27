@@ -671,6 +671,7 @@ cmp.setup {
 
 -- Sina:
 -- Pull, apply, commit, push :bo vs | term cd ~/.local/share/chezmoi && make update
+-- Open Makefile :bo vs ~/.local/share/chezmoi/Makefile
 vim.keymap.set('n', '<c-f>', '<esc>', { desc = 'Sina: escape' })
 vim.keymap.set('i', '<c-f>', '<esc>', { desc = 'Sina: escape' })
 vim.keymap.set('v', '<c-f>', '<esc>', { desc = 'Sina: escape' })
