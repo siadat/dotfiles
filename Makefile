@@ -5,8 +5,8 @@ update:
 	chezmoi apply
 	# push:
 	git add --update
-	git commit -m 'update'
-
+	git commit -m 'update' || true
+	git diff origin
 	@echo "Press enter to push:"
 	@sh -c 'read ok'
 	git push origin HEAD
