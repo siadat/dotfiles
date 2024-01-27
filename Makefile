@@ -6,7 +6,7 @@ update:
 	# push:
 	git add --update
 	git commit -m 'update'
-	Wecho "Press enter to push:"
-	read -r
 
+	@echo "Press enter to push:"
+	read -r
 	git push origin HEAD
