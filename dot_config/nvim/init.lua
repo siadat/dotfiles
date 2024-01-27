@@ -694,6 +694,14 @@ vim.o.wrapscan = false
 
 local SinaFunctions = {}
 
+vim.api.nvim_create_autocmd({"BufWritePost"}, {
+  pattern = {
+    "*/.local/share/chezmoi/dot_config/nvim/init.lua",
+    "*/.config/nvim/init.lua",
+  },
+  command = "bo vs | term cd ~/.local/share/chezmoi && make update",
+})
+
 SinaFunctions.run_command_in_current_line = function()
   -- Runs the command in the current line.
   -- Assumes that the command starts from the first occurance of ":"
