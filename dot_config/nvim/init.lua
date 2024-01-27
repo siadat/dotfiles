@@ -681,11 +681,27 @@ vim.keymap.set('n', '<c-h>', '<c-w>h', { desc = 'Sina: navigating windows' })
 vim.keymap.set('n', '<c-l>', '<c-w>l', { desc = 'Sina: navigating windows' })
 vim.keymap.set('n', ';w', ':up<cr>', { desc = 'Sina: write/update buffer' })
 vim.keymap.set('n', ';q', ':q<cr>', { desc = 'Sina: close window' })
+vim.keymap.set('n', ';v', ':e .local/share/chezmoi/dot_config/nvim/init.lua<cr>', { desc = 'Sina: open nvim config' })
 vim.o.hlsearch = true
+vim.o.splitright = true
+vim.o.equalalways = true
 vim.wo.number = true
 vim.wo.relativenumber = true
 vim.wo.wrap = false
 vim.o.wrapscan = false
+
+-- :bo vs | term ls
+-- :so % | bo vs | term help cd
+-- :bo vs | term cd .local/share/chezmoi && make update
+function run_command_in_current_line()
+  -- Runs the command in the current line.
+  -- Assumes that the command starts from the first occurance of ":"
+  local line = tostring(vim.api.nvim_get_current_line())
+  local command = string.match(line, ":.+")
+  local normal_command = command -- .. "<cr>"
+  print(normal_command)
+  vim.cmd(normal_command)
+end
 
 function open_search_matches()
   local vi_pattern = vim.fn.getreg("/")
@@ -718,3 +734,4 @@ end
 
 vim.keymap.set('n', ';t', open_search_matches, {noremap = true})
 vim.keymap.set('n', ';T', function() vim.cmd('tabc') end, {noremap = true})
+vim.keymap.set('n', ';:', run_command_in_current_line, {noremap = true})
