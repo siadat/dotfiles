@@ -6,7 +6,7 @@ update:
 	# push:
 	git add --update
 	git commit -m 'update' || true
-	git diff origin/main
+	git diff origin/main --stas -p --no-pager
 	@echo "Press enter to push:"
 	@sh -c 'read ok'
 	git push origin HEAD
