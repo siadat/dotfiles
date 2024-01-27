@@ -669,8 +669,8 @@ cmp.setup {
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
 
--- Pull, apply, commit, push :bo vs | term cd ~/.local/share/chezmoi && make update
 -- Sina:
+-- Pull, apply, commit, push :bo vs | term cd ~/.local/share/chezmoi && make update
 vim.keymap.set('n', '<c-f>', '<esc>', { desc = 'Sina: escape' })
 vim.keymap.set('i', '<c-f>', '<esc>', { desc = 'Sina: escape' })
 vim.keymap.set('v', '<c-f>', '<esc>', { desc = 'Sina: escape' })
@@ -691,7 +691,6 @@ vim.wo.number = true
 vim.wo.relativenumber = true
 vim.wo.wrap = false
 vim.o.wrapscan = false
-
 
 local SinaFunctions = {}
 
@@ -736,6 +735,6 @@ SinaFunctions.open_search_matches = function()
   vim.api.nvim_set_current_win(first_win)
 end
 
+vim.keymap.set('n', ';:', SinaFunctions.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
 vim.keymap.set('n', ';t', SinaFunctions.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
 vim.keymap.set('n', ';T', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
-vim.keymap.set('n', ';:', SinaFunctions.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
