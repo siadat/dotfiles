@@ -692,6 +692,7 @@ vim.wo.relativenumber = true
 vim.wo.wrap = false
 vim.o.wrapscan = false
 
+-- "term chezmoi managed -i files -p absolute"
 vim.api.nvim_create_autocmd({"BufWritePost"}, {
   pattern = {
     "*/.local/share/chezmoi/executable_dot_tmux.conf.tmpl",
