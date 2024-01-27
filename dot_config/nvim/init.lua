@@ -681,7 +681,7 @@ vim.keymap.set('n', '<c-h>', '<c-w>h', { desc = 'Sina: navigating windows' })
 vim.keymap.set('n', '<c-l>', '<c-w>l', { desc = 'Sina: navigating windows' })
 vim.keymap.set('n', ';w', ':up<cr>', { desc = 'Sina: write/update buffer' })
 vim.keymap.set('n', ';q', ':q<cr>', { desc = 'Sina: close window' })
-vim.keymap.set('n', ';v', ':e .local/share/chezmoi/dot_config/nvim/init.lua<cr>', { desc = 'Sina: open nvim config' })
+vim.keymap.set('n', ';v', ':e ~/.local/share/chezmoi/dot_config/nvim/init.lua<cr>', { desc = 'Sina: open nvim config' })
 vim.o.hlsearch = true
 vim.o.splitright = true
 vim.o.equalalways = true
@@ -690,7 +690,7 @@ vim.wo.relativenumber = true
 vim.wo.wrap = false
 vim.o.wrapscan = false
 
--- :bo vs | term cd .local/share/chezmoi && make update
+-- :bo vs | term cd ~/.local/share/chezmoi && make update
 function run_command_in_current_line()
   -- Runs the command in the current line.
   -- Assumes that the command starts from the first occurance of ":"
