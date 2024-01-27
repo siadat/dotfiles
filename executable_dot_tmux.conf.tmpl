@@ -15,17 +15,28 @@ set-option -g xterm-keys on
 set-option -g history-limit 100000
 
 set -g status on
-# set-option -g status-right "#{=22:pane_title} | #(python ~/src/affirmations/main.py --duration 3600 --source-file ~/src/affirmations/affirmations.json) 💚 %H:%M %a %d-%b-%Y"
-# set-option -g status-right "#(python ~/src/affirmations/main.py --duration 3600 --source-file ~/src/affirmations/affirmations.json) @SinaSiadat 💚"
-set-option -g status-right "💚"
-set-option -g status-right-length 120
+
+{{ if eq .chezmoi.homeDir "/nail/home/sina" }}
+	set-option -g status-left "Yelp"
+	set-option -g status-right "Yelp"
+{{ else if eq .chezmoi.os "/home/sina" }}
+	# set-option -g status-right "#{=22:pane_title} | #(python ~/src/affirmations/main.py --duration 3600 --source-file ~/src/affirmations/affirmations.json) 💚 %H:%M %a %d-%b-%Y"
+	# set-option -g status-right "#(python ~/src/affirmations/main.py --duration 3600 --source-file ~/src/affirmations/affirmations.json) @SinaSiadat 💚"
+	#
+	#set-option -g status-left-length 120
+	#set-option -g status-left-style bg=#404040 # Customize
+	#set-option -g status-left '[#(uname)] '    # Customize
+	#set-option -g status-left ''    # Customize
+	#set-option -g status-left '[tmux] '    # Customize
+	set-option -g status-left "💚 "
+	set-option -g status-right "💚"
+	set-option -g status-right-length 120
+# linux
+{{ else }}
+# other operating system
+{{ end }}
+
 set-option -g status-interval 60
-#set-option -g status-left-length 120
-#set-option -g status-left-style bg=#404040 # Customize
-#set-option -g status-left '[#(uname)] '    # Customize
-#set-option -g status-left ''    # Customize
-#set-option -g status-left '[tmux] '    # Customize
-set-option -g status-left "💚 "
 set-option -g status-style bg=#404040      # Customize
 set-option escape-time 0
 
