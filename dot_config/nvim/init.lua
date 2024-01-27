@@ -694,6 +694,7 @@ vim.o.wrapscan = false
 
 vim.api.nvim_create_autocmd({"BufWritePost"}, {
   pattern = {
+    "*/.local/share/chezmoi/executable_dot_tmux.conf.tmpl",
     "*/.local/share/chezmoi/dot_config/nvim/init.lua",
     "*/.config/nvim/init.lua",
     "*/.tmux.conf",
