@@ -8,5 +8,5 @@ update:
 	git commit -m 'update'
 
 	@echo "Press enter to push:"
-	read -r
+	sh -c 'read'
 	git push origin HEAD
