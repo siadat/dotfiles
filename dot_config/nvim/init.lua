@@ -690,8 +690,6 @@ vim.wo.relativenumber = true
 vim.wo.wrap = false
 vim.o.wrapscan = false
 
--- :bo vs | term ls
--- :so % | bo vs | term help cd
 -- :bo vs | term cd .local/share/chezmoi && make update
 function run_command_in_current_line()
   -- Runs the command in the current line.
