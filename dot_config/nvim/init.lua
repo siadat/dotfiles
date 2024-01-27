@@ -730,6 +730,6 @@ function open_search_matches()
   vim.api.nvim_set_current_win(first_win)
 end
 
-vim.keymap.set('n', ';t', open_search_matches, {noremap = true})
-vim.keymap.set('n', ';T', function() vim.cmd('tabc') end, {noremap = true})
-vim.keymap.set('n', ';:', run_command_in_current_line, {noremap = true})
+vim.keymap.set('n', ';t', open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
+vim.keymap.set('n', ';T', function() vim.cmd('tabc') end, { noremap = true, desc = "Sina: close tab" })
+vim.keymap.set('n', ';:', run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
