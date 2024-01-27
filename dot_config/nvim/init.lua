@@ -584,6 +584,7 @@ local servers = {
       telemetry = { enable = false },
       -- NOTE: toggle below to ignore Lua_LS's noisy `missing-fields` warnings
       -- diagnostics = { disable = { 'missing-fields' } },
+      diagnostics = { globals = { 'vim' } },
     },
   },
 }
@@ -668,6 +669,7 @@ cmp.setup {
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
 
+-- Pull, apply, commit, push :bo vs | term cd ~/.local/share/chezmoi && make update
 -- Sina:
 vim.keymap.set('n', '<c-f>', '<esc>', { desc = 'Sina: escape' })
 vim.keymap.set('i', '<c-f>', '<esc>', { desc = 'Sina: escape' })
@@ -690,8 +692,10 @@ vim.wo.relativenumber = true
 vim.wo.wrap = false
 vim.o.wrapscan = false
 
--- :bo vs | term cd ~/.local/share/chezmoi && make update
-function run_command_in_current_line()
+
+local SinaFunctions = {}
+
+SinaFunctions.run_command_in_current_line = function()
   -- Runs the command in the current line.
   -- Assumes that the command starts from the first occurance of ":"
   local line = tostring(vim.api.nvim_get_current_line())
@@ -701,10 +705,12 @@ function run_command_in_current_line()
   vim.cmd(normal_command)
 end
 
-function open_search_matches()
+SinaFunctions.open_search_matches = function()
   local vi_pattern = vim.fn.getreg("/")
+
+  local rg_pattern = string.gsub(vi_pattern, "\\c", "")
   -- replace \< and \> with \b
-  local rg_pattern = string.gsub(vi_pattern, "\\<", "\\b")
+  rg_pattern = string.gsub(vi_pattern, "\\<", "\\b")
   rg_pattern = string.gsub(rg_pattern, "\\>", "\\b")
   -- replace \V with ""
   rg_pattern = string.gsub(rg_pattern, "\\V", "")
@@ -730,6 +736,6 @@ function open_search_matches()
   vim.api.nvim_set_current_win(first_win)
 end
 
-vim.keymap.set('n', ';t', open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
-vim.keymap.set('n', ';T', function() vim.cmd('tabc') end, { noremap = true, desc = "Sina: close tab" })
-vim.keymap.set('n', ';:', run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
+vim.keymap.set('n', ';t', SinaFunctions.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
+vim.keymap.set('n', ';T', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
+vim.keymap.set('n', ';:', SinaFunctions.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
