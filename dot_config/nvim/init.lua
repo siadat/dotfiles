@@ -669,7 +669,7 @@ cmp.setup {
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
 
--- Pull, apply, commit, push :bo vs | term cd ~/.local/share/chezmoi && make update
+-- Pull, apply, commit, push :bo vs | !cd ~/.local/share/chezmoi && make update
 -- Sina:
 vim.keymap.set('n', '<c-f>', '<esc>', { desc = 'Sina: escape' })
 vim.keymap.set('i', '<c-f>', '<esc>', { desc = 'Sina: escape' })
