@@ -696,7 +696,7 @@ local SinaFunctions = {}
 
 vim.api.nvim_create_autocmd({"BufWritePost"}, {
   pattern = {
-    "*/.local/share/chezmoi/dot_config/nvim/init.lua",
+    "~/.local/share/chezmoi/dot_config/nvim/init.lua",
     "*/.config/nvim/init.lua",
   },
   command = "bo vs | term cd ~/.local/share/chezmoi && make update",
