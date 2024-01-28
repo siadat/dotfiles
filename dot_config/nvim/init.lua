@@ -707,6 +707,15 @@ vim.o.wrapscan = false
 
 local SinaStuff = {}
 
+-- :term poetry run python -m cql_struct
+-- tabnew | term man --pager=cat git-add | set ft=man
+SinaStuff.Man = function(opts)
+  vim.cmd.tabnew()
+  vim.cmd(string.format("term man --pager=cat %q", opts.fargs[1]))
+  vim.cmd("set ft=man")
+end
+vim.api.nvim_create_user_command("Man", SinaStuff.Man, { nargs = 1 })
+
 -- The code for jumping to last known position was copied from
 -- https://github.com/creativenull/dotfiles/blob/18bf48c855/config/nvim/init.lua#L60-L80
 -- ---
