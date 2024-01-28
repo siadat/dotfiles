@@ -685,6 +685,7 @@ vim.keymap.set('n', '<c-l>', '<c-w>l', { desc = 'Sina: navigating windows' })
 vim.keymap.set('n', ';w', ':up<cr>', { desc = 'Sina: write/update buffer' })
 vim.keymap.set('n', ';q', ':q<cr>', { desc = 'Sina: close window' })
 vim.keymap.set('n', ';v', ':e ~/.local/share/chezmoi/dot_config/nvim/init.lua<cr>', { desc = 'Sina: open nvim config' })
+-- vim.keymap.set('n', ';v', ':e ~/.config/nvim/init.lua<cr>', { desc = 'Sina: open nvim config' })
 vim.o.hlsearch = true
 vim.o.splitright = true
 vim.o.equalalways = true
@@ -693,7 +694,7 @@ vim.wo.relativenumber = true
 vim.wo.wrap = false
 vim.o.wrapscan = false
 
--- "term chezmoi managed -i files -p absolute"
+local update_chezmoi_group = vim.api.nvim_create_augroup('SinaUpdateChezmoi', { clear = true })
 vim.api.nvim_create_autocmd({"BufWritePost"}, {
   pattern = {
     "*/.local/share/chezmoi/executable_dot_tmux.conf.tmpl",
@@ -701,7 +702,11 @@ vim.api.nvim_create_autocmd({"BufWritePost"}, {
     "*/.config/nvim/init.lua",
     "*/.tmux.conf",
   },
-  command = "bo vs | term cd ~/.local/share/chezmoi && make update",
+  -- command = "bo vs | term cd ~/.local/share/chezmoi && make update",
+  callback = function()
+    vim.cmd("bo vs | term cd ~/.local/share/chezmoi && make update")
+  end,
+  group = update_chezmoi_group,
 })
 
 local SinaFunctions = {}
