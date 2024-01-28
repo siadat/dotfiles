@@ -750,9 +750,7 @@ SinaStuff.run_command_in_current_line = function()
   -- Assumes that the command starts from the first occurance of ":"
   local line = tostring(vim.api.nvim_get_current_line())
   local command = string.match(line, ":.+")
-  local normal_command = command -- .. "<cr>"
-  print(normal_command)
-  vim.cmd(normal_command)
+  vim.cmd(command)
 end
 
 SinaStuff.open_search_matches = function()
