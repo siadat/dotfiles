@@ -701,7 +701,7 @@ vim.o.hlsearch = true
 vim.o.splitright = true
 vim.o.equalalways = true
 vim.wo.number = true
-vim.wo.relativenumber = true
+-- vim.wo.relativenumber = true
 vim.wo.wrap = false
 vim.o.wrapscan = false
 
