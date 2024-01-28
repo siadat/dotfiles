@@ -195,16 +195,19 @@ require('lazy').setup({
     'navarasu/onedark.nvim',
     priority = 1000,
     config = function()
-      vim.cmd.colorscheme 'onedark'
+      if vim.fn.hostname ~= "personalbox" then
+        vim.cmd.colorscheme 'onedark'
+      end
     end,
   },
 
   {
-    -- Theme inspired by Atom
     'ellisonleao/gruvbox.nvim',
     priority = 1000,
     config = function()
-      vim.cmd.colorscheme 'gruvbox'
+      if vim.fn.hostname == "personalbox" then
+        vim.cmd.colorscheme 'gruvbox'
+      end
     end,
   },
 
