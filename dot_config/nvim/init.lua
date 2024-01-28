@@ -669,12 +669,12 @@ cmp.setup {
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
 
--- Sina:
--- Pull, apply, commit, push :bo vs | term cd ~/.local/share/chezmoi && make update
--- Open Makefile :bo vs ~/.local/share/chezmoi/Makefile
-vim.keymap.set('n', '<c-f>', '<esc>', { desc = 'Sina: escape' })
-vim.keymap.set('i', '<c-f>', '<esc>', { desc = 'Sina: escape' })
-vim.keymap.set('v', '<c-f>', '<esc>', { desc = 'Sina: escape' })
+-- sina:
+-- pull, apply, commit, push :bo vs | term cd ~/.local/share/chezmoi && make update
+-- open makefile :bo vs ~/.local/share/chezmoi/makefile
+vim.keymap.set('n', '<c-f>', '<esc>', { desc = 'sina: escape' })
+vim.keymap.set('i', '<c-f>', '<esc>', { desc = 'sina: escape' })
+vim.keymap.set('v', '<c-f>', '<esc>', { desc = 'sina: escape' })
 vim.keymap.set('c', '<c-f>', '<esc>', { desc = 'Sina: escape' })
 vim.keymap.set('t', '<c-f>', '<esc>', { desc = 'Sina: escape' })
 vim.keymap.set('s', '<c-f>', '<esc>', { desc = 'Sina: escape' })
@@ -684,7 +684,7 @@ vim.keymap.set('n', '<c-h>', '<c-w>h', { desc = 'Sina: navigating windows' })
 vim.keymap.set('n', '<c-l>', '<c-w>l', { desc = 'Sina: navigating windows' })
 vim.keymap.set('n', ';w', ':up<cr>', { desc = 'Sina: write/update buffer' })
 vim.keymap.set('n', ';q', ':q<cr>', { desc = 'Sina: close window' })
-vim.keymap.set('n', ';v', ':e ~/.local/share/chezmoi/dot_config/nvim/init.lua<cr>', { desc = 'Sina: open nvim config' })
+-- vim.keymap.set('n', ';v', ':e ~/.local/share/chezmoi/dot_config/nvim/init.lua<cr>', { desc = 'Sina: open nvim config' })
 vim.o.hlsearch = true
 vim.o.splitright = true
 vim.o.equalalways = true
@@ -695,16 +695,42 @@ vim.o.wrapscan = false
 
 local SinaStuff = {}
 
+-- The code for jumping to last known position was copied from
+-- https://github.com/creativenull/dotfiles/blob/18bf48c855/config/nvim/init.lua#L60-L80
+-- ---
+-- When editing a file, always jump to the last known cursor position.
+-- Don't do it when the position is invalid, when inside an event handler
+-- (happens when dropping a file on gvim) and for a commit message (it's
+-- likely a different one than last time).
+SinaStuff.last_pos_group = vim.api.nvim_create_augroup("SinaLastPosGroup", {})
+vim.api.nvim_create_autocmd('BufReadPost', {
+  group = SinaStuff.last_pos_group,
+  callback = function(args)
+    local valid_line = vim.fn.line([['"]]) >= 1 and vim.fn.line([['"]]) < vim.fn.line('$')
+    local not_commit = vim.b[args.buf].filetype ~= 'commit'
+
+    if valid_line and not_commit then
+      vim.cmd([[normal! g`"]])
+    end
+  end,
+})
+
 SinaStuff.chezmoi_sources = vim.fn.systemlist("chezmoi managed -i files -p source-absolute", "", 0)
 SinaStuff.chezmoi_sources_group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true })
 vim.api.nvim_create_autocmd({"BufWritePost"}, {
   pattern = SinaStuff.chezmoi_sources,
-  -- command = "bo vs | term cd ~/.local/share/chezmoi && make update",
   callback = function()
     vim.cmd("bo vs | term cd ~/.local/share/chezmoi && make update")
   end,
   group = SinaStuff.chezmoi_sources_group,
 })
+vim.keymap.set('n', ';v', function()
+  local files = SinaStuff.chezmoi_sources
+  vim.cmd.tabnew(files[1])
+  for i = 2,#files do
+    vim.cmd.vsplit(files[i])
+  end
+end, { desc = 'Sina: open dotfiles' })
 
 SinaStuff.chezmoi_targets = vim.fn.systemlist("chezmoi managed -i files -p absolute", "", 0)
 SinaStuff.chezmoi_targets_group = vim.api.nvim_create_augroup('SinaTargetsReadonly', { clear = true })
