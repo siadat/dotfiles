@@ -8,6 +8,7 @@ update:
 	git --no-pager diff --stat -p origin/main
 
 	@echo "Press enter to commit and push:"
+	@echo "PWD is $(PWD)"
 	@sh -c 'read ok'
 
 	# push:
