@@ -694,24 +694,33 @@ vim.wo.relativenumber = true
 vim.wo.wrap = false
 vim.o.wrapscan = false
 
-local update_chezmoi_group = vim.api.nvim_create_augroup('SinaUpdateChezmoi', { clear = true })
+local SinaStuff = {}
+
+SinaStuff.chezmoi_sources = vim.fn.systemlist("chezmoi managed -i files -p source-absolute", "", 0)
+SinaStuff.chezmoi_sources_group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true })
 vim.api.nvim_create_autocmd({"BufWritePost"}, {
-  pattern = {
-    "*/.local/share/chezmoi/executable_dot_tmux.conf.tmpl",
-    "*/.local/share/chezmoi/dot_config/nvim/init.lua",
-    "*/.config/nvim/init.lua",
-    "*/.tmux.conf",
-  },
+  pattern = SinaStuff.chezmoi_sources,
   -- command = "bo vs | term cd ~/.local/share/chezmoi && make update",
   callback = function()
     vim.cmd("bo vs | term cd ~/.local/share/chezmoi && make update")
   end,
-  group = update_chezmoi_group,
+  group = SinaStuff.chezmoi_sources_group,
 })
 
-local SinaFunctions = {}
+SinaStuff.chezmoi_targets = vim.fn.systemlist("chezmoi managed -i files -p absolute", "", 0)
+SinaStuff.chezmoi_targets_group = vim.api.nvim_create_augroup('SinaTargetsReadonly', { clear = true })
+vim.api.nvim_create_autocmd({"BufReadPost"}, {
+  pattern = SinaStuff.chezmoi_targets,
+  -- command = "bo vs | term cd ~/.local/share/chezmoi && make update",
+  callback = function()
+    vim.api.nvim_err_writeln("This file is managed by chezmoi. You should edit the files in ~/.local/share/chezmoi instead.")
+    vim.bo.modifiable = false
+    vim.bo.readonly = true
+  end,
+  group = SinaStuff.chezmoi_targets_group,
+})
 
-SinaFunctions.run_command_in_current_line = function()
+SinaStuff.run_command_in_current_line = function()
   -- Runs the command in the current line.
   -- Assumes that the command starts from the first occurance of ":"
   local line = tostring(vim.api.nvim_get_current_line())
@@ -721,7 +730,7 @@ SinaFunctions.run_command_in_current_line = function()
   vim.cmd(normal_command)
 end
 
-SinaFunctions.open_search_matches = function()
+SinaStuff.open_search_matches = function()
   local vi_pattern = vim.fn.getreg("/")
 
   local rg_pattern = string.gsub(vi_pattern, "\\c", "")
@@ -746,12 +755,11 @@ SinaFunctions.open_search_matches = function()
 
   for i = 2,#files do
     vim.cmd.vsplit(files[i])
-    -- vim.cmd.split(files[i])
     vim.cmd.normal("gg0nzz")
   end
   vim.api.nvim_set_current_win(first_win)
 end
 
-vim.keymap.set('n', ';:', SinaFunctions.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
-vim.keymap.set('n', ';t', SinaFunctions.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
+vim.keymap.set('n', ';:', SinaStuff.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
+vim.keymap.set('n', ';t', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
 vim.keymap.set('n', ';T', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
