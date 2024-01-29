@@ -15,4 +15,4 @@ update:
 	git add --update
 	git commit -m 'update' || true
 	git push origin HEAD
-	echo "Pushed :)"
+	@echo "Pushed :)"
