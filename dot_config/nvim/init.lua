@@ -195,7 +195,7 @@ require('lazy').setup({
     'navarasu/onedark.nvim',
     priority = 1000,
     config = function()
-      if vim.fn.hostname ~= "personalbox" then
+      if vim.fn.hostname() ~= "personalbox" then
         vim.cmd.colorscheme 'onedark'
       end
     end,
@@ -205,7 +205,7 @@ require('lazy').setup({
     'ellisonleao/gruvbox.nvim',
     priority = 1000,
     config = function()
-      if vim.fn.hostname == "personalbox" then
+      if vim.fn.hostname() == "personalbox" then
         vim.cmd.colorscheme 'gruvbox'
       end
     end,
