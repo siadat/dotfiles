@@ -623,6 +623,17 @@ vim.o.wrapscan = false
 
 local SinaStuff = {}
 
+-- SinaStuff.create_floating_window = function()
+--   local parent_width = vim.api.nvim_win_get_width(0)
+--   local parent_height = vim.api.nvim_win_get_height(0)
+--   local width = 20
+--   local height = 3
+--
+--   local buf = vim.api.nvim_create_buf(false, false)
+--   vim.api.nvim_open_win(buf, true, {relative='win', row=(parent_height-height)/2, col=(parent_width-width)/2, width=width, height=height})
+-- end
+-- vim.api.nvim_create_user_command("Dialog", SinaStuff.create_floating_window, {})
+
 -- :term poetry run python -m cql_struct
 -- tabnew | term man --pager=cat git-add | set ft=man
 SinaStuff.Man = function(opts)
@@ -639,9 +650,8 @@ vim.api.nvim_create_user_command("Man", SinaStuff.Man, { nargs = 1 })
 -- Don't do it when the position is invalid, when inside an event handler
 -- (happens when dropping a file on gvim) and for a commit message (it's
 -- likely a different one than last time).
-SinaStuff.last_pos_group = vim.api.nvim_create_augroup("SinaLastPosGroup", {})
 vim.api.nvim_create_autocmd('BufReadPost', {
-  group = SinaStuff.last_pos_group,
+  group = vim.api.nvim_create_augroup("SinaLastPosGroup", {}),
   callback = function(args)
     local valid_line = vim.fn.line([['"]]) >= 1 and vim.fn.line([['"]]) < vim.fn.line('$')
     local not_commit = vim.b[args.buf].filetype ~= 'commit'
@@ -653,13 +663,13 @@ vim.api.nvim_create_autocmd('BufReadPost', {
 })
 
 SinaStuff.chezmoi_sources = vim.fn.systemlist("chezmoi managed -i files -p source-absolute", "", 0)
-SinaStuff.chezmoi_sources_group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true })
+
 vim.api.nvim_create_autocmd({"BufWritePost"}, {
   pattern = SinaStuff.chezmoi_sources,
   callback = function()
     vim.cmd("bo vs | term cd ~/.local/share/chezmoi && make update")
   end,
-  group = SinaStuff.chezmoi_sources_group,
+  group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true }),
 })
 vim.keymap.set('n', ';v', function()
   local files = SinaStuff.chezmoi_sources
@@ -670,7 +680,7 @@ vim.keymap.set('n', ';v', function()
 end, { desc = 'Sina: open dotfiles' })
 
 SinaStuff.chezmoi_targets = vim.fn.systemlist("chezmoi managed -i files -p absolute", "", 0)
-SinaStuff.chezmoi_targets_group = vim.api.nvim_create_augroup('SinaTargetsReadonly', { clear = true })
+
 vim.api.nvim_create_autocmd({"BufReadPost"}, {
   pattern = SinaStuff.chezmoi_targets,
   -- command = "bo vs | term cd ~/.local/share/chezmoi && make update",
@@ -679,7 +689,7 @@ vim.api.nvim_create_autocmd({"BufReadPost"}, {
     vim.bo.modifiable = false
     vim.bo.readonly = true
   end,
-  group = SinaStuff.chezmoi_targets_group,
+  group = vim.api.nvim_create_augroup('SinaTargetsReadonly', { clear = true }),
 })
 
 SinaStuff.run_command_in_current_line = function()
