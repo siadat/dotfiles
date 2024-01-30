@@ -612,6 +612,7 @@ vim.keymap.set('n', '<c-h>', '<c-w>h', { desc = 'Sina: navigating windows' })
 vim.keymap.set('n', '<c-l>', '<c-w>l', { desc = 'Sina: navigating windows' })
 vim.keymap.set('n', ';w', ':up<cr>', { desc = 'Sina: write/update buffer' })
 vim.keymap.set('n', ';q', ':q<cr>', { desc = 'Sina: close window' })
+vim.keymap.set('n', '<c-p>', require('telescope.builtin').find_files, { desc = 'Sina: search files' })
 -- vim.keymap.set('n', ';v', ':e ~/.local/share/chezmoi/dot_config/nvim/init.lua<cr>', { desc = 'Sina: open nvim config' })
 vim.o.hlsearch = true
 vim.o.splitright = true
