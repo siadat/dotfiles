@@ -67,11 +67,33 @@ vim.opt.rtp:prepend(lazypath)
 --
 --  You can also configure plugins after the setup call,
 --    as they will be available in your neovim runtime.
+
+local lazy_opts = {}
+local python_diagnostic_is_dev = false
+
+if vim.fn.hostname() == "personalbox" then
+  lazy_opts = { dev = { path = '~/src/nvim-plugins' } }
+  python_diagnostic_is_dev = true
+end
+
 require('lazy').setup({
   {
     "siadat/python-diagnostic.nvim",
+
+    -- NOTE: `opts = {}` is the same as calling `require('python-diagnostic.nvim').setup({})`
     opts = {},
-    dev = true,
+
+    dev = python_diagnostic_is_dev,
+    config = function()
+      require('python-diagnostic').setup({
+        command = {"bash", "run-tests.bash"},
+      })
+      vim.api.nvim_create_autocmd({"BufReadPost"}, {
+        -- run usercommand :PythonTestOnSave as provided by python-diagnostic.nvim:
+        pattern = "*.py",
+        command = "PythonTestOnSave",
+      })
+    end,
   },
   -- NOTE: First, some plugins that don't require any configuration
 
@@ -278,9 +300,8 @@ require('lazy').setup({
   --
   --    For additional information see: https://github.com/folke/lazy.nvim#-structuring-your-plugins
   -- { import = 'custom.plugins' },
-}, {
-    dev = { path = '~/src/nvim-plugins' },
-})
+}, lazy_opts)
+
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -750,10 +771,5 @@ end
 vim.keymap.set('n', ';:', SinaStuff.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
 vim.keymap.set('n', ';t', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
 vim.keymap.set('n', ';T', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
-require("python-diagnostic")
+-- require("python-diagnostic")
 -- create autocmd for when a python file is loaded
-vim.api.nvim_create_autocmd({"BufReadPost"}, {
-  -- run usercommand :PythonTestOnSave as provided by python-diagnostic.nvim:
-  pattern = "*.py",
-  command = "PythonTestOnSave",
-})
