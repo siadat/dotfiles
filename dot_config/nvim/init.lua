@@ -751,8 +751,8 @@ vim.keymap.set('n', ';:', SinaStuff.run_command_in_current_line, { noremap = tru
 vim.keymap.set('n', ';t', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
 vim.keymap.set('n', ';T', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
 require("python-diagnostic")
--- Run user command :PythonTestOnSave:
-vim.api.nvim_create_autocmd({"BufWritePost"}, {
+-- create autocmd for when a python file is loaded
+vim.api.nvim_create_autocmd({"BufReadPost"}, {
   -- run usercommand :PythonTestOnSave as provided by python-diagnostic.nvim:
   pattern = "*.py",
   command = "PythonTestOnSave",
