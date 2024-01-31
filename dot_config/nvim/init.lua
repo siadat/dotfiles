@@ -68,33 +68,39 @@ vim.opt.rtp:prepend(lazypath)
 --  You can also configure plugins after the setup call,
 --    as they will be available in your neovim runtime.
 
-local lazy_opts = {}
-local python_diagnostic_is_dev = false
+local python_diagnostic_plugin = {}
 
 if vim.fn.hostname() == "personalbox" then
-  lazy_opts = { dev = { path = '~/src/nvim-plugins' } }
-  python_diagnostic_is_dev = true
+  python_diagnostic_plugin = {
+      "siadat/python-diagnostic.nvim",
+      dev = true,
+      config = function()
+        require('python-diagnostic').setup({
+          command = "poetry run pytest --tb native",
+        })
+        vim.api.nvim_create_autocmd({"BufReadPost"}, {
+          pattern = "*.py",
+          command = "PythonTestOnSave",
+        })
+      end,
+    }
+else
+  python_diagnostic_plugin = {
+      "siadat/python-diagnostic.nvim",
+      config = function()
+        require('python-diagnostic').setup({
+          command = "bash run-tests.bash",
+        })
+        vim.api.nvim_create_autocmd({"BufReadPost"}, {
+          pattern = "*.py",
+          command = "PythonTestOnSave",
+        })
+      end,
+    }
 end
 
 require('lazy').setup({
-  {
-    "siadat/python-diagnostic.nvim",
-
-    -- NOTE: `opts = {}` is the same as calling `require('python-diagnostic.nvim').setup({})`
-    opts = {},
-
-    dev = python_diagnostic_is_dev,
-    config = function()
-      require('python-diagnostic').setup({
-        command = {"bash", "run-tests.bash"},
-      })
-      vim.api.nvim_create_autocmd({"BufReadPost"}, {
-        -- run usercommand :PythonTestOnSave as provided by python-diagnostic.nvim:
-        pattern = "*.py",
-        command = "PythonTestOnSave",
-      })
-    end,
-  },
+  python_diagnostic_plugin,
   -- NOTE: First, some plugins that don't require any configuration
 
   -- Git related plugins
@@ -235,9 +241,9 @@ require('lazy').setup({
         section_separators = '',
       },
       sections = {
-        lualine_a = {'mode'},
-        lualine_b = {'branch', 'diff', 'diagnostics'},
-        lualine_c = {'filename'},
+        lualine_a = {'filename'},
+        lualine_b = {'mode'},
+        lualine_c = {'branch', 'diff', 'diagnostics'},
         lualine_x = {'filetype'},
         lualine_y = {'progress'},
         lualine_z = {'location'}
@@ -300,7 +306,7 @@ require('lazy').setup({
   --
   --    For additional information see: https://github.com/folke/lazy.nvim#-structuring-your-plugins
   -- { import = 'custom.plugins' },
-}, lazy_opts)
+}, { dev = { path = '~/src/nvim-plugins' } })
 
 
 -- [[ Setting options ]]
