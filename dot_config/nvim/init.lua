@@ -68,6 +68,11 @@ vim.opt.rtp:prepend(lazypath)
 --  You can also configure plugins after the setup call,
 --    as they will be available in your neovim runtime.
 require('lazy').setup({
+  {
+    "siadat/python-diagnostic.nvim",
+    opts = {},
+    dev = true,
+  },
   -- NOTE: First, some plugins that don't require any configuration
 
   -- Git related plugins
@@ -273,7 +278,9 @@ require('lazy').setup({
   --
   --    For additional information see: https://github.com/folke/lazy.nvim#-structuring-your-plugins
   -- { import = 'custom.plugins' },
-}, {})
+}, {
+    dev = { path = '~/src/nvim-plugins' },
+})
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -743,3 +750,4 @@ end
 vim.keymap.set('n', ';:', SinaStuff.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
 vim.keymap.set('n', ';t', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
 vim.keymap.set('n', ';T', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
+require("python-diagnostic")
