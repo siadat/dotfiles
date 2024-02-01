@@ -87,6 +87,7 @@ if vim.fn.hostname() == "personalbox" then
 else
   python_diagnostic_plugin = {
       "siadat/python-diagnostic.nvim",
+      dev = true,
       config = function()
         require('python-diagnostic').setup({
           command = "bash run-tests.bash",
