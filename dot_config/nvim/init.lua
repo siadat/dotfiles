@@ -745,13 +745,11 @@ SinaStuff.pick_dotfiles = function(opts)
     local finders = require "telescope.finders"
     local conf = require("telescope.config").values
 
-    -- For custom action (openning in new tab)
-    local actions = require "telescope.actions"
-    local action_state = require "telescope.actions.state"
-
     local attach_mappings = nil
     if opts.newtab then
       -- For custom action (openning in new tab), otherwise it will open in the current buffer
+      local actions = require "telescope.actions"
+      local action_state = require "telescope.actions.state"
       attach_mappings = function(prompt_bufnr, map)
           actions.select_default:replace(function()
             actions.close(prompt_bufnr)
