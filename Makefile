@@ -1,18 +1,20 @@
 update:
-	# pull:
+	@# pull:
 	chezmoi update
-	# apply:
+
+	@# apply:
 	chezmoi apply
 	git log --oneline ...origin/main
 
 	git --no-pager diff --exit-code --stat -p origin/main || make commit_and_push
 
 commit_and_push:
-	# ask user
+	@# ask user
 	@echo "Press enter to commit and push:"
 	@echo "PWD is $(PWD)"
 	@sh -c 'read ok'
-	# push:
+
+	@# push:
 	git add --update
 	git commit -m 'update' || true
 	git push origin HEAD
