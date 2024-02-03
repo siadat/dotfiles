@@ -4,7 +4,10 @@ update:
 	# apply:
 	chezmoi apply
 	git log --oneline ...origin/main
-	git --no-pager diff --stat -p origin/main
+
+	git --no-pager diff --exit-code --stat -p origin/main || make commit_and_push
+
+commit_and_push:
 	# ask user
 	@echo "Press enter to commit and push:"
 	@echo "PWD is $(PWD)"
