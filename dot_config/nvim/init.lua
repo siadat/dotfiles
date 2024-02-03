@@ -713,10 +713,17 @@ end
 
 SinaStuff.chezmoi_sources = SinaStuff.get_chezmoi_sources()
 
+local terminal_win = nil
 vim.api.nvim_create_autocmd({"BufWritePost"}, {
   pattern = SinaStuff.chezmoi_sources,
   callback = function()
-    vim.cmd("bo vs | term cd ~/.local/share/chezmoi && make update")
+    print("Apply?")
+    local char = vim.fn.nr2char(vim.fn.getchar())
+
+    if char == 'y' then
+      vim.cmd.vsplit()
+      vim.cmd("term cd ~/.local/share/chezmoi && make update")
+    end
   end,
   group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true }),
 })
