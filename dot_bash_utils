@@ -1,0 +1,5 @@
+# Bash utils by Sina
+# Source this in your ~/.bash_profile
+# vim: ft=bash
+alias p='git pull origin HEAD'
+alias push='git push oprigin HEAD'
