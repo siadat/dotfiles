@@ -641,9 +641,6 @@ mason_lspconfig.setup_handlers {
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
 
--- sina:
--- pull, apply, commit, push :bo vs | term cd ~/.local/share/chezmoi && make update
--- open makefile :bo vs ~/.local/share/chezmoi/makefile
 vim.keymap.set('n', '<c-f>', '<esc>', { desc = 'sina: escape' })
 vim.keymap.set('i', '<c-f>', '<esc>', { desc = 'sina: escape' })
 vim.keymap.set('v', '<c-f>', '<esc>', { desc = 'sina: escape' })
@@ -697,11 +694,10 @@ vim.api.nvim_create_user_command("Man", SinaStuff.Man, { nargs = 1 })
 
 -- The code for jumping to last known position was copied from
 -- https://github.com/creativenull/dotfiles/blob/18bf48c855/config/nvim/init.lua#L60-L80
--- ---
--- When editing a file, always jump to the last known cursor position.
+-- "When editing a file, always jump to the last known cursor position.
 -- Don't do it when the position is invalid, when inside an event handler
 -- (happens when dropping a file on gvim) and for a commit message (it's
--- likely a different one than last time).
+-- likely a different one than last time)."
 vim.api.nvim_create_autocmd('BufReadPost', {
   group = vim.api.nvim_create_augroup("SinaLastPosGroup", {}),
   callback = function(args)
@@ -739,16 +735,17 @@ vim.api.nvim_create_autocmd({"BufWritePost"}, {
       terminal_win = vim.api.nvim_get_current_win()
     end
     vim.api.nvim_set_current_win(current_win)
-
-    -- print("Apply? (y, or any other key to skip)")
-    -- local char = vim.fn.nr2char(vim.fn.getchar())
-    -- if char == 'y' then
-    --   vim.cmd.vsplit()
-    --   vim.cmd("term cd ~/.local/share/chezmoi && make update")
-    -- end
   end,
   group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true }),
 })
+
+
+SinaStuff.prompt_single_char = function(prompt_message)
+  print(prompt_message)
+  local char = vim.fn.nr2char(vim.fn.getchar())
+  return char
+end
+
 -- open dotfiles with Telescope
 SinaStuff.pick_dotfiles = function(opts)
     opts = opts or {}
@@ -835,7 +832,6 @@ SinaStuff.open_search_matches = function()
   local out = vim.fn.system(string.format("rg -l %q | sort", rg_pattern))
   local files = vim.fn.split(out)
   vim.print("Searched for: " .. vi_pattern)
-  --vim.print(files)
 
   if #files == 0 then
     vim.print("No matches found")
@@ -852,6 +848,10 @@ SinaStuff.open_search_matches = function()
   vim.api.nvim_set_current_win(first_win)
 end
 
+-- Sina commands:
+-- pull, apply, commit, push :bo vs | term cd ~/.local/share/chezmoi && make update
+-- open makefile :bo vs ~/.local/share/chezmoi/makefile
 -- vim.keymap.set('n', ';:', SinaStuff.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
+
 vim.keymap.set('n', ';t', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
 vim.keymap.set('n', ';T', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
