@@ -656,6 +656,7 @@ vim.keymap.set('n', '<c-h>', '<c-w>h', { desc = 'Sina: navigating windows' })
 vim.keymap.set('n', '<c-l>', '<c-w>l', { desc = 'Sina: navigating windows' })
 vim.keymap.set('n', ';w', ':up<cr>', { desc = 'Sina: write/update buffer' })
 vim.keymap.set('n', ';q', ':q<cr>', { desc = 'Sina: close window' })
+vim.keymap.set('n', ';:', 'q:', { desc = 'Sina: open Normal mode command window' })
 vim.keymap.set('n', '<c-p>', require('telescope.builtin').find_files, { desc = 'Sina: search files' })
 -- vim.keymap.set('n', ';v', ':e ~/.local/share/chezmoi/dot_config/nvim/init.lua<cr>', { desc = 'Sina: open nvim config' })
 vim.o.hlsearch = true
@@ -775,7 +776,7 @@ SinaStuff.open_search_matches = function()
   vim.api.nvim_set_current_win(first_win)
 end
 
-vim.keymap.set('n', ';:', SinaStuff.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
+-- vim.keymap.set('n', ';:', SinaStuff.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
 vim.keymap.set('n', ';t', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
 vim.keymap.set('n', ';T', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
 -- require("python-diagnostic")
