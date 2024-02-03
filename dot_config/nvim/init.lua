@@ -720,23 +720,7 @@ vim.api.nvim_create_autocmd({"BufWritePost"}, {
   end,
   group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true }),
 })
-vim.keymap.set('n', ';v', function()
-  SinaStuff.pick_dotfiles({
-    telescope_opts = require("telescope.themes").get_dropdown{},
-    files = SinaStuff.get_chezmoi_sources(),
-    newtab = true,
-  })
-end, { desc = 'Sina: open dotfiles with Telescope' })
-
--- open dotfiles without Telescope
-vim.keymap.set('n', ';V', function()
-  local files = SinaStuff.chezmoi_sources
-  vim.cmd.tabnew(files[1])
-  for i = 2,#files do
-    vim.cmd.vsplit(files[i])
-  end
-end, { desc = 'Sina: open dotfiles' })
-
+-- open dotfiles with Telescope
 SinaStuff.pick_dotfiles = function(opts)
     opts = opts or {}
 
@@ -770,6 +754,23 @@ SinaStuff.pick_dotfiles = function(opts)
 
     }):find()
 end
+vim.keymap.set('n', ';v', function()
+  SinaStuff.pick_dotfiles({
+    telescope_opts = require("telescope.themes").get_dropdown{},
+    files = SinaStuff.get_chezmoi_sources(),
+    newtab = true,
+  })
+end, { desc = 'Sina: open dotfiles with Telescope' })
+
+-- open dotfiles without Telescope
+vim.keymap.set('n', ';V', function()
+  local files = SinaStuff.chezmoi_sources
+  vim.cmd.tabnew(files[1])
+  for i = 2,#files do
+    vim.cmd.vsplit(files[i])
+  end
+end, { desc = 'Sina: open dotfiles' })
+
 
 SinaStuff.chezmoi_targets = vim.fn.systemlist("chezmoi managed -i files -p absolute", "", 0)
 
