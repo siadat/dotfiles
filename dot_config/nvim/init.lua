@@ -668,15 +668,22 @@ vim.o.wrapscan = false
 
 local SinaStuff = {}
 
--- SinaStuff.create_floating_window = function()
---   local parent_width = vim.api.nvim_win_get_width(0)
---   local parent_height = vim.api.nvim_win_get_height(0)
---   local width = 20
---   local height = 3
---
---   local buf = vim.api.nvim_create_buf(false, false)
---   vim.api.nvim_open_win(buf, true, {relative='win', row=(parent_height-height)/2, col=(parent_width-width)/2, width=width, height=height})
--- end
+SinaStuff.create_floating_window = function()
+  local parent_width = vim.api.nvim_win_get_width(0)
+  local parent_height = vim.api.nvim_win_get_height(0)
+  local width = math.floor(1+parent_width / 5)
+  local height = math.floor(1+parent_height / 3)
+
+  print(parent_width, parent_height, width, height)
+  local buf = vim.api.nvim_create_buf(false, false)
+  vim.api.nvim_open_win(buf, true, {
+    relative='win',
+    row=(parent_height-height)/2,
+    col=(parent_width-width)/2,
+    width=width,
+    height=height,
+  })
+end
 -- vim.api.nvim_create_user_command("Dialog", SinaStuff.create_floating_window, {})
 
 -- :term poetry run python -m cql_struct
@@ -717,13 +724,28 @@ local terminal_win = nil
 vim.api.nvim_create_autocmd({"BufWritePost"}, {
   pattern = SinaStuff.chezmoi_sources,
   callback = function()
-    print("Apply?")
-    local char = vim.fn.nr2char(vim.fn.getchar())
+    local current_win = vim.api.nvim_get_current_win()
+    local wins = vim.api.nvim_tabpage_list_wins(0)
 
-    if char == 'y' then
+    if vim.tbl_contains(wins, terminal_win) then
+      -- run command in that existing terminal window:
+      vim.api.nvim_set_current_win(terminal_win)
+      vim.cmd("term cd ~/.local/share/chezmoi && make update")
+    else
+      -- open a new terminal window:
       vim.cmd.vsplit()
       vim.cmd("term cd ~/.local/share/chezmoi && make update")
+      -- TODO: any benefits in using nvim_open_term()?
+      terminal_win = vim.api.nvim_get_current_win()
     end
+    vim.api.nvim_set_current_win(current_win)
+
+    -- print("Apply? (y, or any other key to skip)")
+    -- local char = vim.fn.nr2char(vim.fn.getchar())
+    -- if char == 'y' then
+    --   vim.cmd.vsplit()
+    --   vim.cmd("term cd ~/.local/share/chezmoi && make update")
+    -- end
   end,
   group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true }),
 })
@@ -833,5 +855,3 @@ end
 -- vim.keymap.set('n', ';:', SinaStuff.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
 vim.keymap.set('n', ';t', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
 vim.keymap.set('n', ';T', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
--- require("python-diagnostic")
--- create autocmd for when a python file is loaded
