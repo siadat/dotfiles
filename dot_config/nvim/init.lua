@@ -811,14 +811,6 @@ vim.api.nvim_create_autocmd({"BufReadPost"}, {
   group = vim.api.nvim_create_augroup('SinaTargetsReadonly', { clear = true }),
 })
 
-SinaStuff.run_command_in_current_line = function()
-  -- Runs the command in the current line.
-  -- Assumes that the command starts from the first occurance of ":"
-  local line = tostring(vim.api.nvim_get_current_line())
-  local command = string.match(line, ":.+")
-  vim.cmd(command)
-end
-
 SinaStuff.open_search_matches = function()
   local vi_pattern = vim.fn.getreg("/")
 
@@ -851,7 +843,15 @@ end
 -- Sina commands:
 -- pull, apply, commit, push :bo vs | term cd ~/.local/share/chezmoi && make update
 -- open makefile :bo vs ~/.local/share/chezmoi/makefile
+SinaStuff.run_command_in_current_line = function()
+  -- Runs the command in the current line.
+  -- Assumes that the command starts from the first occurance of ":"
+  local line = tostring(vim.api.nvim_get_current_line())
+  local command = string.match(line, ":.+")
+  vim.cmd(command)
+end
 -- vim.keymap.set('n', ';:', SinaStuff.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
+
 
 vim.keymap.set('n', ';t', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
 vim.keymap.set('n', ';T', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
