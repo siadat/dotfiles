@@ -783,7 +783,7 @@ vim.api.nvim_create_autocmd({"BufWritePost"}, {
   group = vim.api.nvim_create_augroup('SinaStickyDiff', { clear = true }),
 })
 SinaStuff.commit_all = function()
-    vim.cmd("term git commit -a -m 'auto commit' && git show --stat -p")
+    vim.cmd("term git commit -a -m 'auto commit' && git --no-pager show --stat -p")
 end
 vim.keymap.set('n', ';d', SinaStuff.show_or_update_diff_win, { noremap = true, desc = "Sina: show diff" })
 vim.keymap.set('n', ';c', SinaStuff.commit_all, { noremap = true, desc = "Sina: commit all" })
