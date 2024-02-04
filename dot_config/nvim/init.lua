@@ -717,7 +717,12 @@ end
 SinaStuff.chezmoi_sources = SinaStuff.get_chezmoi_sources()
 
 -- TODO: convert chezmoi_sticky_term_win to a table to support multiple tabs
-local chezmoi_sticky_term_win = nil
+-- The reason for using a global variable is that I am re-:source-ing this file
+-- on save, and I want to keep using the same terminal window.
+-- If a new terminal window is opened each time then keeping track of chezmoi_sticky_term_win is pointless
+-- or I shouldn't :source this file automatically on save and I will have to manually :source it or restart neovim
+vim.g.chezmoi_sticky_term_win = vim.g.chezmoi_sticky_term_win or nil
+
 vim.api.nvim_create_autocmd({"BufWritePost"}, {
   pattern = SinaStuff.chezmoi_sources,
   callback = function()
@@ -725,17 +730,18 @@ vim.api.nvim_create_autocmd({"BufWritePost"}, {
     local wins = vim.api.nvim_tabpage_list_wins(0)
 
     local command = "term cd ~/.local/share/chezmoi && make update"
-    if vim.tbl_contains(wins, chezmoi_sticky_term_win) then
+    if vim.tbl_contains(wins, vim.g.chezmoi_sticky_term_win) then
       -- run command in that existing terminal window:
-      vim.api.nvim_set_current_win(chezmoi_sticky_term_win)
+      vim.api.nvim_set_current_win(vim.g.chezmoi_sticky_term_win)
       vim.cmd(command)
     else
       -- open a new terminal window:
       vim.cmd.vsplit()
       vim.cmd(command)
       -- TODO: any benefits in using nvim_open_term()?
-      chezmoi_sticky_term_win = vim.api.nvim_get_current_win()
+      vim.g.chezmoi_sticky_term_win = vim.api.nvim_get_current_win()
     end
+    vim.cmd("source ~/.config/nvim/init.lua")
     vim.api.nvim_set_current_win(current_win)
   end,
   group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true }),
@@ -777,8 +783,7 @@ vim.api.nvim_create_autocmd({"BufWritePost"}, {
   group = vim.api.nvim_create_augroup('SinaStickyDiff', { clear = true }),
 })
 SinaStuff.commit_all = function()
-    local command = "git commit -a -m 'auto commit'"
-    vim.cmd(command)
+    vim.cmd("term git commit -a -m 'auto commit' && git show --stat -p")
 end
 vim.keymap.set('n', ';d', SinaStuff.show_or_update_diff_win, { noremap = true, desc = "Sina: show diff" })
 vim.keymap.set('n', ';c', SinaStuff.commit_all, { noremap = true, desc = "Sina: commit all" })
