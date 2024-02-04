@@ -741,7 +741,7 @@ vim.api.nvim_create_autocmd({"BufWritePost"}, {
       -- TODO: any benefits in using nvim_open_term()?
       vim.g.chezmoi_sticky_term_win = vim.api.nvim_get_current_win()
     end
-    vim.cmd("source ~/.config/nvim/init.lua")
+    vim.cmd("silent source ~/.config/nvim/init.lua")
     vim.api.nvim_set_current_win(current_win)
   end,
   group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true }),
