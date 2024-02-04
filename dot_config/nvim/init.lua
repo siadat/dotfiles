@@ -716,28 +716,72 @@ end
 
 SinaStuff.chezmoi_sources = SinaStuff.get_chezmoi_sources()
 
-local terminal_win = nil
+-- TODO: convert chezmoi_sticky_term_win to a table to support multiple tabs
+local chezmoi_sticky_term_win = nil
 vim.api.nvim_create_autocmd({"BufWritePost"}, {
   pattern = SinaStuff.chezmoi_sources,
   callback = function()
     local current_win = vim.api.nvim_get_current_win()
     local wins = vim.api.nvim_tabpage_list_wins(0)
 
-    if vim.tbl_contains(wins, terminal_win) then
+    local command = "term cd ~/.local/share/chezmoi && make update"
+    if vim.tbl_contains(wins, chezmoi_sticky_term_win) then
       -- run command in that existing terminal window:
-      vim.api.nvim_set_current_win(terminal_win)
-      vim.cmd("term cd ~/.local/share/chezmoi && make update")
+      vim.api.nvim_set_current_win(chezmoi_sticky_term_win)
+      vim.cmd(command)
     else
       -- open a new terminal window:
       vim.cmd.vsplit()
-      vim.cmd("term cd ~/.local/share/chezmoi && make update")
+      vim.cmd(command)
       -- TODO: any benefits in using nvim_open_term()?
-      terminal_win = vim.api.nvim_get_current_win()
+      chezmoi_sticky_term_win = vim.api.nvim_get_current_win()
     end
     vim.api.nvim_set_current_win(current_win)
   end,
   group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true }),
 })
+
+-- TODO: convert diff_sticky_win to a table to support multiple tabs
+local diff_sticky_win = nil
+SinaStuff.show_or_update_diff_win = function()
+    local current_win = vim.api.nvim_get_current_win()
+    local wins = vim.api.nvim_tabpage_list_wins(0)
+
+    local command = "term git --no-pager diff --exit-code --stat -p"
+    if vim.tbl_contains(wins, diff_sticky_win) then
+      -- run command in that existing terminal window:
+      vim.api.nvim_set_current_win(diff_sticky_win)
+      vim.cmd(command)
+    else
+      -- open a new terminal window:
+      vim.cmd.vsplit()
+      vim.cmd(command)
+      -- TODO: any benefits in using nvim_open_term()?
+      diff_sticky_win = vim.api.nvim_get_current_win()
+    end
+    vim.api.nvim_set_current_win(current_win)
+end
+vim.api.nvim_create_autocmd({"BufWritePost"}, {
+  pattern = "*",
+  callback = function()
+    if diff_sticky_win == nil then
+      return
+    end
+
+    -- if diff_sticky_win is still open, run SinaStuff.show_or_update_diff_win()
+    local wins = vim.api.nvim_tabpage_list_wins(0)
+    if vim.tbl_contains(wins, diff_sticky_win) then
+      SinaStuff.show_or_update_diff_win()
+    end
+  end,
+  group = vim.api.nvim_create_augroup('SinaStickyDiff', { clear = true }),
+})
+SinaStuff.commit_all = function()
+    local command = "git commit -a -m 'auto commit'"
+    vim.cmd(command)
+end
+vim.keymap.set('n', ';d', SinaStuff.show_or_update_diff_win, { noremap = true, desc = "Sina: show diff" })
+vim.keymap.set('n', ';c', SinaStuff.commit_all, { noremap = true, desc = "Sina: commit all" })
 
 
 SinaStuff.prompt_single_char = function(prompt_message)
