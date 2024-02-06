@@ -107,6 +107,14 @@ require('lazy').setup({
   -- Git related plugins
   'tpope/vim-fugitive',
   'tpope/vim-rhubarb',
+  {
+    'ThePrimeagen/harpoon',
+    -- use branch harpoon2
+    branch = 'harpoon2',
+    dependencies = { "nvim-lua/plenary.nvim" },
+    config = function()
+    end,
+  },
 
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
@@ -904,3 +912,29 @@ end
 
 vim.keymap.set('n', ';t', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
 vim.keymap.set('n', ';T', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
+
+-- if vim.fn.hostname() ~= "personalbox" then
+--   require("sina_utils").setup({})
+-- else
+--   -- clear require cache
+--   package.loaded["sina_utils"] = nil
+--   require("sina_utils").setup({debug = true})
+-- end
+
+      local harpoon = require("harpoon")
+      -- REQUIRED
+      harpoon:setup()
+      -- REQUIRED
+
+      print("Harpoon setup")
+      vim.keymap.set("n", "<leader>a", function() harpoon:list():append() end)
+      vim.keymap.set("n", "<c-e>", function() harpoon.ui:toggle_quick_menu(harpoon:list()) end)
+
+      -- vim.keymap.set("n", "<C-h>", function() harpoon:list():select(1) end)
+      -- vim.keymap.set("n", "<C-t>", function() harpoon:list():select(2) end)
+      -- vim.keymap.set("n", "<C-n>", function() harpoon:list():select(3) end)
+      -- vim.keymap.set("n", "<C-s>", function() harpoon:list():select(4) end)
+
+      -- -- Toggle previous & next buffers stored within Harpoon list
+      -- vim.keymap.set("n", "<C-S-P>", function() harpoon:list():prev() end)
+      -- vim.keymap.set("n", "<C-S-N>", function() harpoon:list():next() end)
