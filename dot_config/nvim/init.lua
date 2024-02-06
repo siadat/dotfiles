@@ -798,7 +798,7 @@ end
 -- open dotfiles with Telescope
 SinaStuff.telescope_wrapper = function(opts)
     opts = opts or {}
-    -- https://github.com/nvim-telescope/telescope.nvim/blob/7b5c5f56/developers.md#introduction
+    -- https://github.com/nvim-telescope/telescope.nvim/blob/7b5c5f56/developers.md
     local pickers = require "telescope.pickers"
     local finders = require "telescope.finders"
     local conf = require("telescope.config").values
@@ -812,8 +812,8 @@ SinaStuff.telescope_wrapper = function(opts)
       actions.select_default:replace(function()
         actions.close(prompt_bufnr)
         local selection = action_state.get_selected_entry()
-        vim.cmd(selection[1])
-        -- vim.cmd.tabnew(selection[1])
+        print("Running:", vim.inspect(selection.value))
+        vim.cmd(selection.value)
       end)
       return true
     end
@@ -822,6 +822,13 @@ SinaStuff.telescope_wrapper = function(opts)
       prompt_title = "Pick a command",
       finder = finders.new_table {
         results = opts.items,
+        entry_maker = function(entry)
+          return {
+            value = entry[2],
+            display = entry[1],
+            ordinal = entry[1],
+          }
+        end
       },
       sorter = conf.generic_sorter(opts.telescope_opts),
       attach_mappings = attach_mappings,
@@ -832,7 +839,10 @@ vim.keymap.set('n', ';v', function()
   local files = SinaStuff.get_chezmoi_sources()
   local commands = {}
   for _,v in ipairs(files) do
-    table.insert(commands, string.format("tabnew %s", v))
+    local command = string.format("tabnew %s", v)
+    -- remove ".../.local/share/chezmoi/" from v:
+    display = string.gsub(v, "^.*sina/.local/share/chezmoi/", "")
+    table.insert(commands, {display, command})
   end
   SinaStuff.telescope_wrapper({
     telescope_opts = require("telescope.themes").get_dropdown{},
@@ -847,8 +857,13 @@ vim.keymap.set('n', ';f', function()
   })
 end, { desc = 'Sina: open common files with Telescope' })
 SinaStuff.get_commandsfile = function()
-  local list = vim.fn.systemlist("cat ~/commandsfile.txt | grep -v '^$'", "", 0)
-  return list
+  local commandsfile = vim.fn.system("yq -o json ~/commandsfile.yaml")
+  local got = vim.json.decode(commandsfile)
+  local items = {}
+  for k,v in pairs(got.commands) do
+    table.insert(items, {k, v})
+  end
+  return items
 end
 
 -- open dotfiles without Telescope
