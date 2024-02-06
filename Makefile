@@ -6,7 +6,7 @@ update:
 	chezmoi apply
 	git log --oneline ...origin/main
 
-	git --no-pager diff --exit-code --stat -p origin/main || make commit_and_push
+	git --no-pager diff -w --exit-code --stat -p origin/main || make commit_and_push
 
 commit_and_push:
 	@# ask user
