@@ -711,7 +711,7 @@ vim.api.nvim_create_autocmd('BufReadPost', {
 })
 
 SinaStuff.get_chezmoi_sources = function()
-   return vim.fn.systemlist("chezmoi managed -i files -p source-absolute", "", 0)
+  return vim.fn.systemlist("chezmoi managed -i files -p source-absolute", "", 0)
 end
 
 SinaStuff.chezmoi_sources = SinaStuff.get_chezmoi_sources()
@@ -796,33 +796,32 @@ SinaStuff.prompt_single_char = function(prompt_message)
 end
 
 -- open dotfiles with Telescope
-SinaStuff.pick_dotfiles = function(opts)
+SinaStuff.telescope_wrapper = function(opts)
     opts = opts or {}
-
     -- https://github.com/nvim-telescope/telescope.nvim/blob/7b5c5f56/developers.md#introduction
     local pickers = require "telescope.pickers"
     local finders = require "telescope.finders"
     local conf = require("telescope.config").values
 
     local attach_mappings = nil
-    if opts.newtab then
-      -- For custom action (openning in new tab), otherwise it will open in the current buffer
-      local actions = require "telescope.actions"
-      local action_state = require "telescope.actions.state"
-      attach_mappings = function(prompt_bufnr, map)
-          actions.select_default:replace(function()
-            actions.close(prompt_bufnr)
-            local selection = action_state.get_selected_entry()
-            vim.cmd.tabnew(selection[1])
-          end)
-          return true
-        end
+
+    -- For custom action (openning in new tab), otherwise it will open in the current buffer
+    local actions = require "telescope.actions"
+    local action_state = require "telescope.actions.state"
+    attach_mappings = function(prompt_bufnr, map)
+      actions.select_default:replace(function()
+        actions.close(prompt_bufnr)
+        local selection = action_state.get_selected_entry()
+        vim.cmd(selection[1])
+        -- vim.cmd.tabnew(selection[1])
+      end)
+      return true
     end
 
     pickers.new(opts.telescope_opts, {
-      prompt_title = "My dotfiles",
+      prompt_title = "Pick a command",
       finder = finders.new_table {
-        results = opts.files,
+        results = opts.items,
       },
       sorter = conf.generic_sorter(opts.telescope_opts),
       attach_mappings = attach_mappings,
@@ -830,12 +829,27 @@ SinaStuff.pick_dotfiles = function(opts)
     }):find()
 end
 vim.keymap.set('n', ';v', function()
-  SinaStuff.pick_dotfiles({
+  local files = SinaStuff.get_chezmoi_sources()
+  local commands = {}
+  for _,v in ipairs(files) do
+    table.insert(commands, string.format("tabnew %s", v))
+  end
+  SinaStuff.telescope_wrapper({
     telescope_opts = require("telescope.themes").get_dropdown{},
-    files = SinaStuff.get_chezmoi_sources(),
-    newtab = true,
+    items = commands,
   })
 end, { desc = 'Sina: open dotfiles with Telescope' })
+
+vim.keymap.set('n', ';f', function()
+  local commands = SinaStuff.get_commandsfile()
+  SinaStuff.telescope_wrapper({
+    items = commands,
+  })
+end, { desc = 'Sina: open common files with Telescope' })
+SinaStuff.get_commandsfile = function()
+  local list = vim.fn.systemlist("cat ~/commandsfile.txt", "", 0)
+  return list
+end
 
 -- open dotfiles without Telescope
 vim.keymap.set('n', ';V', function()
@@ -904,11 +918,3 @@ end
 
 vim.keymap.set('n', ';t', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
 vim.keymap.set('n', ';T', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
-
--- if vim.fn.hostname() ~= "personalbox" then
---   require("sina_utils").setup({})
--- else
---   -- clear require cache
---   package.loaded["sina_utils"] = nil
---   require("sina_utils").setup({debug = true})
--- end
