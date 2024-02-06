@@ -455,7 +455,7 @@ vim.keymap.set('n', '<leader>sr', require('telescope.builtin').resume, { desc = 
 vim.defer_fn(function()
   require('nvim-treesitter.configs').setup {
     -- Add languages to be installed here that you want installed for treesitter
-    ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim', 'bash' },
+    ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim', 'bash', 'yaml' },
 
     -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
     auto_install = false,
@@ -857,6 +857,7 @@ vim.keymap.set('n', ';f', function()
   })
 end, { desc = 'Sina: open common files with Telescope' })
 SinaStuff.get_commandsfile = function()
+  -- curl -L "https://github.com/mikefarah/yq/releases/download/v4.40.5/yq_linux_amd64" -o ~/bin/yq && chmod +x ~/bin/yq
   local commandsfile = vim.fn.system("yq -o json ~/commandsfile.yaml")
   local got = vim.json.decode(commandsfile)
   local items = {}
