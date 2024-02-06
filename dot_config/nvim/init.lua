@@ -847,7 +847,7 @@ vim.keymap.set('n', ';f', function()
   })
 end, { desc = 'Sina: open common files with Telescope' })
 SinaStuff.get_commandsfile = function()
-  local list = vim.fn.systemlist("cat ~/commandsfile.txt", "", 0)
+  local list = vim.fn.systemlist("cat ~/commandsfile.txt | grep -v '^$'", "", 0)
   return list
 end
 
