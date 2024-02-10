@@ -110,6 +110,14 @@ require('lazy').setup({
 
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
+  {
+    "sourcegraph/sg.nvim",
+    dependencies = { "nvim-lua/plenary.nvim", --[[ "nvim-telescope/telescope.nvim ]] },
+
+    -- If you have a recent version of lazy.nvim, you don't need to add this!
+    build = "nvim -l build/init.lua",
+    -- DISABLED: opts = {},
+  },
 
   'github/copilot.vim',
   -- NOTE: This is where your plugins related to LSP can be installed.
@@ -455,7 +463,7 @@ vim.keymap.set('n', '<leader>sr', require('telescope.builtin').resume, { desc = 
 vim.defer_fn(function()
   require('nvim-treesitter.configs').setup {
     -- Add languages to be installed here that you want installed for treesitter
-    ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim', 'bash', 'yaml' },
+    ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim', 'bash', 'yaml', 'zig' },
 
     -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
     auto_install = false,
@@ -960,26 +968,33 @@ SinaStuff.get_root = function(bufnr, lang)
   return tree:root()
 end
 
-SinaStuff.format_script_in_yaml = function()
-  local bufnr = vim.api.nvim_get_current_buf()
-  if vim.bo[bufnr].filetype ~= "yaml" then
-    -- TODO: TIL vim.notify, use it more often!
-    vim.notify("Not a yaml file")
-    return
-  end
-
-  local root = SinaStuff.get_root(bufnr, "yaml")
-
-  local query_string = [[
-  (block_mapping_pair
-    key: (_)
-    value: (_) @value
-  )
-  ]]
-  local query = vim.treesitter.query.parse("yaml", query_string)
-  for id, node in query:iter_captures(root, bufnr, 0, -1) do
-    print(vim.inspect(node))
-  end
-end
-
-vim.api.nvim_create_user_command("FormatScriptInYaml", SinaStuff.format_script_in_yaml, { nargs = 0 })
+-- SinaStuff.format_script_in_yaml = function()
+--   local bufnr = vim.api.nvim_get_current_buf()
+--   if vim.bo[bufnr].filetype ~= "yaml" then
+--     -- TODO: TIL vim.notify, use it more often!
+--     vim.notify("Not a yaml file")
+--     return
+--   end
+--   local root = SinaStuff.get_root(bufnr, "yaml")
+--   local query_string = [[
+--   (
+--     (block_mapping_pair
+--       key: (_) @key1
+--       value: (block_node (block_scalar)) @injection.language
+--     )
+--     (block_mapping_pair
+--       key: (_) @key
+--       value: ((block_node (block_scalar)) @value)  @injection.content
+--     )
+--     (#eq? @key1 "language")
+--     (#eq? @key "content")
+--   )
+--   ]]
+--   local query = vim.treesitter.query.parse("yaml", query_string)
+--   for id, node in query:iter_captures(root, bufnr, 0, -1) do
+--     local node_text = string.format(">> %q", vim.treesitter.get_node_text(node, bufnr))
+--     print(id, node_text)
+--   end
+-- end
+-- vim.api.nvim_create_user_command("FormatScriptInYaml", SinaStuff.format_script_in_yaml, { nargs = 0 })
+-- SinaStuff.format_script_in_yaml()
