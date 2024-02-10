@@ -740,11 +740,11 @@ vim.api.nvim_create_autocmd({"BufWritePost"}, {
         end,
         on_stdout = function(_, data)
             if #data == 1 and data[1] == "" then
-                print("Updated chezmoi sources")
+                print("Chezmoi sources updated")
                 return
             end
             if #data > 0 and data[1] == "HAS_DIFF" then
-                print("UNCOMMITED CHEZMOI CHANGES DETECTED, PLEASE COMMIT AND PUSH CHANGES USING :SinaReviewAndPushChezmoiChanges")
+                print("Chezmoi sources updated, but found changes, please commit and push changes using :SinaReviewAndPushChezmoiChanges")
                 return
             end
             print(vim.inspect(data))
