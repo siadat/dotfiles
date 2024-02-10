@@ -8,6 +8,15 @@ update:
 
 	git --no-pager diff -w --exit-code --stat -p origin/main || make commit_and_push
 
+update_short:
+	@# pull:
+	@chezmoi update > /dev/null
+
+	@# apply:
+	@chezmoi apply
+
+	@git --no-pager diff -w --quiet --exit-code origin/main || echo "HAS_DIFF"
+
 commit_and_push:
 	@# ask user
 	@echo "Press enter to commit and push:"

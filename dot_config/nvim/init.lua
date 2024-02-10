@@ -723,29 +723,69 @@ SinaStuff.chezmoi_sources = SinaStuff.get_chezmoi_sources()
 -- or I shouldn't :source this file automatically on save and I will have to manually :source it or restart neovim
 vim.g.chezmoi_sticky_term_win = vim.g.chezmoi_sticky_term_win or nil
 
+-- vim.api.nvim_create_autocmd({"BufWritePost"}, {
+--   pattern = SinaStuff.chezmoi_sources,
+--   callback = function()
+--     local current_win = vim.api.nvim_get_current_win()
+--     local wins = vim.api.nvim_tabpage_list_wins(0)
+-- 
+--     local command = "term cd ~/.local/share/chezmoi && make update"
+--     if vim.tbl_contains(wins, vim.g.chezmoi_sticky_term_win) then
+--       -- run command in that existing terminal window:
+--       vim.api.nvim_set_current_win(vim.g.chezmoi_sticky_term_win)
+--       vim.cmd(command)
+--     else
+--       -- open a new terminal window:
+--       vim.cmd.vsplit()
+--       vim.cmd(command)
+--       -- TODO: any benefits in using nvim_open_term()?
+--       vim.g.chezmoi_sticky_term_win = vim.api.nvim_get_current_win()
+--     end
+--     vim.cmd("silent source ~/.config/nvim/init.lua")
+--     vim.api.nvim_set_current_win(current_win)
+--   end,
+--   group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true }),
+-- })
 vim.api.nvim_create_autocmd({"BufWritePost"}, {
   pattern = SinaStuff.chezmoi_sources,
   callback = function()
-    local current_win = vim.api.nvim_get_current_win()
-    local wins = vim.api.nvim_tabpage_list_wins(0)
-
-    local command = "term cd ~/.local/share/chezmoi && make update"
-    if vim.tbl_contains(wins, vim.g.chezmoi_sticky_term_win) then
-      -- run command in that existing terminal window:
-      vim.api.nvim_set_current_win(vim.g.chezmoi_sticky_term_win)
-      vim.cmd(command)
-    else
-      -- open a new terminal window:
-      vim.cmd.vsplit()
-      vim.cmd(command)
-      -- TODO: any benefits in using nvim_open_term()?
-      vim.g.chezmoi_sticky_term_win = vim.api.nvim_get_current_win()
-    end
-    vim.cmd("silent source ~/.config/nvim/init.lua")
-    vim.api.nvim_set_current_win(current_win)
+    local command = "cd ~/.local/share/chezmoi && make update_short"
+    local final_command = string.format("bash -c %q", command)
+    vim.fn.jobstart(final_command, {
+        pty = false,
+        detach = false,
+        stdout_buffered = true,
+        on_stderr = function(_, data)
+            if #data == 1 and data[1] == "" then
+                return
+            end
+            print(string.format("STDERR for %q:", final_command), vim.inspect(data))
+        end,
+        on_stdout = function(_, data)
+            if #data == 1 and data[1] == "" then
+                return
+            end
+            if #data > 0 and data[1] == "HAS_DIFF" then
+                print("UNCOMMITED CHEZMOI CHANGES DETECTED, PLEASE COMMIT AND PUSH CHANGES USING :SinaReviewAndPushChezmoiChanges")
+                return
+            end
+            print(vim.inspect(data))
+        end,
+        on_exit = function(_, code)
+            if code > 0 then
+                vim.cmd("silent source ~/.local/share/chezmoi/dot_config/nvim/init.lua")
+            else
+                vim.cmd("silent source ~/.config/nvim/init.lua")
+            end
+        end,
+    })
   end,
   group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true }),
 })
+vim.api.nvim_create_user_command("SinaReviewAndPushChezmoiChanges", function()
+  vim.cmd.vsplit()
+  vim.cmd("term cd ~/.local/share/chezmoi && make update")
+end, { nargs = 0 })
 
 -- TODO: convert diff_sticky_win to a table to support multiple tabs
 local diff_sticky_win = nil
@@ -934,3 +974,35 @@ end
 
 vim.keymap.set('n', ';t', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
 vim.keymap.set('n', ';T', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
+
+-- General purpose function to get treesitter root node
+SinaStuff.get_root = function(bufnr, lang)
+  local parser = vim.treesitter.get_parser(bufnr, lang, {})
+  local tree = parser:parse()[1]
+  return tree:root()
+end
+
+SinaStuff.format_script_in_yaml = function()
+  local bufnr = vim.api.nvim_get_current_buf()
+  if vim.bo[bufnr].filetype ~= "yaml" then
+    -- TODO: TIL vim.notify, use it more often!
+    vim.notify("Not a yaml file")
+    return
+  end
+
+  local root = SinaStuff.get_root(bufnr, "yaml")
+
+  local query_string = [[
+  (block_mapping_pair
+    key: (_)
+    value: (_) @value
+  )
+  ]]
+  local query = vim.treesitter.query.parse("yaml", query_string)
+  for id, node in query:iter_captures(root, bufnr, 0, -1) do
+    vim.cmd.message(id)
+    vim.cmd.message(vim.inspect(node))
+  end
+end
+
+vim.api.nvim_create_user_command("FormatScriptInYaml", SinaStuff.format_script_in_yaml, { nargs = 0 })
