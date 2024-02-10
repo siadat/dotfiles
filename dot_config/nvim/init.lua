@@ -740,6 +740,7 @@ vim.api.nvim_create_autocmd({"BufWritePost"}, {
         end,
         on_stdout = function(_, data)
             if #data == 1 and data[1] == "" then
+                print("Updated chezmoi sources")
                 return
             end
             if #data > 0 and data[1] == "HAS_DIFF" then
@@ -977,8 +978,7 @@ SinaStuff.format_script_in_yaml = function()
   ]]
   local query = vim.treesitter.query.parse("yaml", query_string)
   for id, node in query:iter_captures(root, bufnr, 0, -1) do
-    vim.cmd.message(id)
-    vim.cmd.message(vim.inspect(node))
+    print(vim.inspect(node))
   end
 end
 
