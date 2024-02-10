@@ -723,29 +723,6 @@ SinaStuff.chezmoi_sources = SinaStuff.get_chezmoi_sources()
 -- or I shouldn't :source this file automatically on save and I will have to manually :source it or restart neovim
 vim.g.chezmoi_sticky_term_win = vim.g.chezmoi_sticky_term_win or nil
 
--- vim.api.nvim_create_autocmd({"BufWritePost"}, {
---   pattern = SinaStuff.chezmoi_sources,
---   callback = function()
---     local current_win = vim.api.nvim_get_current_win()
---     local wins = vim.api.nvim_tabpage_list_wins(0)
--- 
---     local command = "term cd ~/.local/share/chezmoi && make update"
---     if vim.tbl_contains(wins, vim.g.chezmoi_sticky_term_win) then
---       -- run command in that existing terminal window:
---       vim.api.nvim_set_current_win(vim.g.chezmoi_sticky_term_win)
---       vim.cmd(command)
---     else
---       -- open a new terminal window:
---       vim.cmd.vsplit()
---       vim.cmd(command)
---       -- TODO: any benefits in using nvim_open_term()?
---       vim.g.chezmoi_sticky_term_win = vim.api.nvim_get_current_win()
---     end
---     vim.cmd("silent source ~/.config/nvim/init.lua")
---     vim.api.nvim_set_current_win(current_win)
---   end,
---   group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true }),
--- })
 vim.api.nvim_create_autocmd({"BufWritePost"}, {
   pattern = SinaStuff.chezmoi_sources,
   callback = function()
