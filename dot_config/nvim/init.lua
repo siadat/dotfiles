@@ -221,7 +221,7 @@ require('lazy').setup({
     'navarasu/onedark.nvim',
     priority = 1000,
     config = function()
-      if vim.fn.hostname() == "personalbox" then
+      if false and vim.fn.hostname() == "personalbox" then
         vim.g.onedark_config = { style = 'darker' }
         vim.cmd.colorscheme 'onedark'
       end
@@ -234,6 +234,18 @@ require('lazy').setup({
     config = function()
       if vim.fn.hostname() ~= "personalbox" then
         vim.cmd.colorscheme 'gruvbox'
+      end
+    end,
+  },
+
+  {
+    "bluz71/vim-nightfly-colors",
+    name = "nightfly",
+    lazy = false,
+    priority = 1000,
+    config = function()
+      if vim.fn.hostname() == "personalbox" then
+        vim.cmd.colorscheme 'nightfly'
       end
     end,
   },
@@ -808,8 +820,38 @@ vim.api.nvim_create_autocmd({"BufWritePost"}, {
   end,
   group = vim.api.nvim_create_augroup('SinaStickyDiff', { clear = true }),
 })
+
+SinaStuff.syntax_highlighted_content = function(language, content)
+  -- This is noop in Lua. The purpose of this function is to help my
+  -- treesitter injection know the language for the given string.
+  _ = language
+  return content
+end
+
 SinaStuff.commit_all = function()
-    vim.cmd("term git commit -a -m 'auto commit' && git --no-pager show --stat -p")
+    -- vim.cmd("term git commit -a -m 'auto commit' && git --no-pager show --stat -p")
+    local curl_command = string.format(SinaStuff.syntax_highlighted_content("bash", [[
+      git diff --stat -p
+      OPENAI_API_KEY="$(cat ~/.openai_api_key.txt)"
+      curl --silent https://api.openai.com/v1/chat/completions \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $OPENAI_API_KEY" \
+        -d %q | jq -r '.choices[0].message.content'
+    ]]), vim.json.encode({
+      model = "gpt-4",
+      messages = {
+        {
+          role = "user",
+          -- TODO: pass git-diff output
+          content = "say something that proves you are NOT human",
+        },
+      },
+    }))
+
+    vim.cmd.vsplit()
+    vim.cmd.term(curl_command)
+    -- TODO: enable committing again:
+    -- vim.cmd("term git commit -a -m 'auto commit' && git --no-pager show --stat -p")
 end
 vim.keymap.set('n', ';d', SinaStuff.show_or_update_diff_win, { noremap = true, desc = "Sina: show diff" })
 vim.keymap.set('n', ';c', SinaStuff.commit_all, { noremap = true, desc = "Sina: commit all" })
@@ -838,6 +880,9 @@ SinaStuff.telescope_wrapper = function(opts)
       actions.select_default:replace(function()
         actions.close(prompt_bufnr)
         local selection = action_state.get_selected_entry()
+        if selection == nil then
+          return
+        end
         print("Running:", vim.inspect(selection.value))
         vim.cmd(selection.value)
       end)
