@@ -828,6 +828,10 @@ SinaStuff.syntax_highlighted_content = function(language, content)
   return content
 end
 
+vim.api.nvim_create_user_command("FPB", function()
+  vim.cmd.term("fpb %")
+end, { nargs = 0 })
+
 SinaStuff.commit_all = function()
     -- vim.cmd("term git commit -a -m 'auto commit' && git --no-pager show --stat -p")
     local curl_command = string.format(SinaStuff.syntax_highlighted_content("bash", [[
