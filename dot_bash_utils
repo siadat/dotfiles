@@ -3,3 +3,5 @@
 # vim: ft=bash
 alias p='git pull origin HEAD'
 alias push='git push origin HEAD'
+export HISTFILESIZE=
+export HISTSIZE=
