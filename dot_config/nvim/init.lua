@@ -244,7 +244,7 @@ require('lazy').setup({
     -- lazy = false,
     priority = 1000,
     config = function()
-      if false and vim.fn.hostname() == "personalbox" then
+      if vim.fn.hostname() == "personalbox" then
         vim.cmd.colorscheme 'nightfly'
       end
     end,
