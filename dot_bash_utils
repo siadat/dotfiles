@@ -41,7 +41,7 @@ function dotfiles {
 		set +x
 		cd ~/.local/share/chezmoi/
 		git add -u
-		git diff --cached origin/main
+		git --no-pager diff -w --exit-code --stat -p origin/main && return
 		git status
 		read -r -p "Commit and push? [y/N] " response
 		case "$response" in
