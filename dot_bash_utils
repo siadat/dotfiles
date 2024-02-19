@@ -34,11 +34,8 @@ function capture () {
 
 function dotfiles {
 	(
-		set -e
-		set -x
-		chezmoi update
-		chezmoi apply
-		set +x
+		echo "chezmoi update" && chezmoi update
+		echo "chezmoi apply" && chezmoi apply
 		cd ~/.local/share/chezmoi/
 		git add -u
 		git --no-pager diff -w --exit-code --stat -p origin/main && return
