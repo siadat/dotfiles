@@ -16,6 +16,7 @@ alias gd='git diff --stat -p -w' # -U0
 alias gdc='git diff --stat -p -w --cached' # -U0
 alias gsh='git show --stat -p -w' #  -U0
 alias gs='git status'
+alias zig='LD_LIBRARY_PATH=$(brew --prefix)/lib ~/src/zig/build/stage3/bin/zig'
 
 # open results of rg in EDITOR
 function vrg() {
