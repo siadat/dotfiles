@@ -237,16 +237,6 @@ require('lazy').setup({
       end
     end,
   },
-  {
-    "catppuccin/nvim",
-    name = "catppuccin",
-    priority = 1000,
-    config = function()
-      if vim.fn.hostname() == "personalbox" then
-        vim.cmd.colorscheme 'catppuccino'
-      end
-    end,
-  },
 
   {
     "bluz71/vim-nightfly-colors",
@@ -753,43 +743,43 @@ SinaStuff.chezmoi_sources = SinaStuff.get_chezmoi_sources()
 -- or I shouldn't :source this file automatically on save and I will have to manually :source it or restart neovim
 vim.g.chezmoi_sticky_term_win = vim.g.chezmoi_sticky_term_win or nil
 
-vim.api.nvim_create_autocmd({"BufWritePost"}, {
-  pattern = SinaStuff.chezmoi_sources,
-  callback = function()
-    local command = "cd ~/.local/share/chezmoi && make update_short"
-    local final_command = string.format("bash -c %q", command)
-    vim.fn.jobstart(final_command, {
-        pty = false,
-        detach = false,
-        stdout_buffered = true,
-        on_stderr = function(_, data)
-            if #data == 1 and data[1] == "" then
-                return
-            end
-            print(string.format("STDERR for %q:", final_command), vim.inspect(data))
-        end,
-        on_stdout = function(_, data)
-            if #data == 1 and data[1] == "" then
-                print("Chezmoi sources updated")
-                return
-            end
-            if #data > 0 and data[1] == "HAS_DIFF" then
-                print("Chezmoi sources updated, but found changes, please commit and push changes using :SinaReviewAndPushChezmoiChanges")
-                return
-            end
-            print(vim.inspect(data))
-        end,
-        on_exit = function(_, code)
-            if code > 0 then
-                vim.cmd("silent source ~/.local/share/chezmoi/dot_config/nvim/init.lua")
-            else
-                vim.cmd("silent source ~/.config/nvim/init.lua")
-            end
-        end,
-    })
-  end,
-  group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true }),
-})
+-- vim.api.nvim_create_autocmd({"BufWritePost"}, {
+--   pattern = SinaStuff.chezmoi_sources,
+--   callback = function()
+--     local command = "cd ~/.local/share/chezmoi && make update_short"
+--     local final_command = string.format("bash -c %q", command)
+--     vim.fn.jobstart(final_command, {
+--         pty = false,
+--         detach = false,
+--         stdout_buffered = true,
+--         on_stderr = function(_, data)
+--             if #data == 1 and data[1] == "" then
+--                 return
+--             end
+--             print(string.format("STDERR for %q:", final_command), vim.inspect(data))
+--         end,
+--         on_stdout = function(_, data)
+--             if #data == 1 and data[1] == "" then
+--                 print("Chezmoi sources updated")
+--                 return
+--             end
+--             if #data > 0 and data[1] == "HAS_DIFF" then
+--                 print("Chezmoi sources updated, but found changes, please commit and push changes using :SinaReviewAndPushChezmoiChanges")
+--                 return
+--             end
+--             print(vim.inspect(data))
+--         end,
+--         on_exit = function(_, code)
+--             if code > 0 then
+--                 vim.cmd("silent source ~/.local/share/chezmoi/dot_config/nvim/init.lua")
+--             else
+--                 vim.cmd("silent source ~/.config/nvim/init.lua")
+--             end
+--         end,
+--     })
+--   end,
+--   group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true }),
+-- })
 vim.api.nvim_create_user_command("SinaReviewAndPushChezmoiChanges", function()
   vim.cmd.vsplit()
   vim.cmd("term cd ~/.local/share/chezmoi && make update")
