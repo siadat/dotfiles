@@ -34,8 +34,10 @@ function capture () {
 function dotfiles {
 	(
 		set -e
+		set -x
 		chezmoi update
 		chezmoi apply
+		set +x
 		cd ~/.local/share/chezmoi/
 		git add -u
 		git diff --cached origin/main
