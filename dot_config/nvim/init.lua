@@ -249,6 +249,16 @@ require('lazy').setup({
       end
     end,
   },
+  -- amongst your other plugins
+  -- {'akinsho/toggleterm.nvim', version = "*", config = true},
+  -- or
+  {
+    'akinsho/toggleterm.nvim',
+    version = "*",
+    opts = {
+      open_mapping = [[<c-\>]],
+    },
+  },
 
   {
     -- Set lualine as statusline
