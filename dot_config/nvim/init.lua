@@ -216,17 +216,17 @@ require('lazy').setup({
     },
   },
 
-  {
-    -- Theme inspired by Atom
-    'navarasu/onedark.nvim',
-    priority = 1000,
-    config = function()
-      if false and vim.fn.hostname() == "personalbox" then
-        vim.g.onedark_config = { style = 'darker' }
-        vim.cmd.colorscheme 'onedark'
-      end
-    end,
-  },
+  -- {
+  --   -- Theme inspired by Atom
+  --   'navarasu/onedark.nvim',
+  --   priority = 1000,
+  --   config = function()
+  --     if false and vim.fn.hostname() == "personalbox" then
+  --       vim.g.onedark_config = { style = 'darker' }
+  --       vim.cmd.colorscheme 'onedark'
+  --     end
+  --   end,
+  -- },
 
   {
     'ellisonleao/gruvbox.nvim',
@@ -237,14 +237,24 @@ require('lazy').setup({
       end
     end,
   },
+  {
+    "catppuccin/nvim",
+    name = "catppuccin",
+    priority = 1000,
+    config = function()
+      if vim.fn.hostname() == "personalbox" then
+        vim.cmd.colorscheme 'catppuccino'
+      end
+    end,
+  },
 
   {
     "bluz71/vim-nightfly-colors",
     name = "nightfly",
-    lazy = false,
+    -- lazy = false,
     priority = 1000,
     config = function()
-      if vim.fn.hostname() == "personalbox" then
+      if false and vim.fn.hostname() == "personalbox" then
         vim.cmd.colorscheme 'nightfly'
       end
     end,
@@ -832,33 +842,71 @@ vim.api.nvim_create_user_command("FPB", function()
   vim.cmd.term("fpb %")
 end, { nargs = 0 })
 
-SinaStuff.commit_all = function()
-    -- vim.cmd("term git commit -a -m 'auto commit' && git --no-pager show --stat -p")
-    local curl_command = string.format(SinaStuff.syntax_highlighted_content("bash", [[
-      git diff --stat -p
-      OPENAI_API_KEY="$(cat ~/.openai_api_key.txt)"
-      curl --silent https://api.openai.com/v1/chat/completions \
-        -H "Content-Type: application/json" \
-        -H "Authorization: Bearer $OPENAI_API_KEY" \
-        -d %q | jq -r '.choices[0].message.content'
-    ]]), vim.json.encode({
-      model = "gpt-4",
-      messages = {
-        {
-          role = "user",
-          -- TODO: pass git-diff output
-          content = "say something that proves you are NOT human",
-        },
-      },
-    }))
-
-    vim.cmd.vsplit()
-    vim.cmd.term(curl_command)
-    -- TODO: enable committing again:
-    -- vim.cmd("term git commit -a -m 'auto commit' && git --no-pager show --stat -p")
+SinaStuff.execute_command = function(command, callback)
+  local stdout = ""
+  local stderr = ""
+  vim.fn.jobstart(command, {
+    pty = false,
+    detach = false,
+    stdout_buffered = false,
+    on_stdout = function(_, data)
+      local lines = table.concat(data, "\n")
+      if lines == "" then
+        return
+      end
+      stdout = stdout .. lines
+    end,
+    on_stderr = function(_, data)
+      local lines = table.concat(data, "\n")
+      if lines == "" then
+        return
+      end
+      stderr = stderr .. lines
+    end,
+    on_exit = function(_, code)
+      callback(code, stdout, stderr)
+    end
+  })
 end
+
+SinaStuff.commit_all = function()
+  local command = vim.fn.trim(SinaStuff.syntax_highlighted_content("bash", [[
+    file=$(mktemp)
+    cat sina-project.yaml | yq -o json > $file
+    echo $file
+  ]]))
+
+  SinaStuff.execute_command(command, function(code, stdout, stderr)
+    local project_filepath = vim.fn.trim(stdout)
+
+    local path = require("plenary.path")
+    local json = path:new(project_filepath):read()
+    local project = vim.json.decode(json)
+    if project and project.auto_commit and project.auto_commit.enabled == true then
+      SinaStuff.execute_command(string.format(SinaStuff.syntax_highlighted_content("bash", [[
+        project_filepath=%q
+        prompt_message=$(mktemp)
+        prompt=$(mktemp)
+        cat $project_filepath | yq -o json | jq .auto_commit.commit_message_prompt > $prompt_message
+        git diff --stat -p >> $prompt_message
+        cat $prompt_message | jq -nR '[inputs] | join("\n") | {model: "gpt-4", messages: [{role: "user", content: .}]}' > $prompt
+
+        OPENAI_API_KEY="$(cat ~/.openai_api_key.txt)"
+        curl --silent https://api.openai.com/v1/chat/completions \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $OPENAI_API_KEY" \
+          -d @$prompt | jq -r '.choices[0].message.content'
+      ]]), project_filepath), function(code, stdout, stderr)
+          print("GPT says:", vim.fn.trim(stdout))
+      end)
+    end
+  end)
+end
+
 vim.keymap.set('n', ';d', SinaStuff.show_or_update_diff_win, { noremap = true, desc = "Sina: show diff" })
-vim.keymap.set('n', ';c', SinaStuff.commit_all, { noremap = true, desc = "Sina: commit all" })
+
+-- The commit messages are terrible
+-- vim.keymap.set('n', ';c', SinaStuff.commit_all, { noremap = true, desc = "Sina: commit all" })
 
 
 SinaStuff.prompt_single_char = function(prompt_message)
@@ -1007,8 +1055,12 @@ end
 -- vim.keymap.set('n', ';:', SinaStuff.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
 
 
-vim.keymap.set('n', ';t', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
-vim.keymap.set('n', ';T', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
+vim.keymap.set('n', ';tp', function() vim.cmd('tabprevious') end, { noremap = true, desc = "Sina: prev tab" })
+vim.keymap.set('n', ';tn', function() vim.cmd('tabnext') end, { noremap = true, desc = "Sina: next tab" })
+vim.keymap.set('n', ';ts', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
+vim.keymap.set('n', ';tq', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
+-- vim.keymap.set('n', ';t', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
+-- vim.keymap.set('n', ';T', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
 
 -- General purpose function to get treesitter root node
 SinaStuff.get_root = function(bufnr, lang)
