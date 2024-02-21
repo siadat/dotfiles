@@ -114,6 +114,7 @@ require('lazy').setup({
     'mfussenegger/nvim-dap',
     config = function()
       local dap = require('dap')
+      -- require('dap').session().current_frame.scopes[1].variables
       dap.set_log_level('TRACE')
       dap.adapters.lldb = {
         type = 'executable',
@@ -125,11 +126,12 @@ require('lazy').setup({
           name = 'zig',
           type = 'lldb',
           request = 'launch',
-          program = function()
-            -- TODO: build then return the build
-            -- or maybe build *then* run dap.run({...})
-            return '${fileBasenameNoExtension}'
-          end,
+          program = '${fileBasenameNoExtension}',
+          -- program = function()
+          --   -- TODO: build then return the build
+          --   -- or maybe build via jobstart *then* run dap.run({...})
+          --   return '${fileBasenameNoExtension}'
+          -- end,
           cwd = '${workspaceFolder}',
           stopOnEntry = false,
           args = {},
