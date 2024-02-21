@@ -111,6 +111,34 @@ require('lazy').setup({
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
   {
+    'mfussenegger/nvim-dap',
+    config = function()
+      local dap = require('dap')
+      dap.set_log_level('TRACE')
+      dap.adapters.lldb = {
+        type = 'executable',
+        command = '/home/linuxbrew/.linuxbrew/bin/lldb-vscode', -- adjust as needed, must be absolute path
+        name = 'lldb'
+      }
+      dap.configurations.zig = {
+        {
+          name = 'zig',
+          type = 'lldb',
+          request = 'launch',
+          program = function()
+            -- TODO: build then return the build
+            -- or maybe build *then* run dap.run({...})
+            return '${fileBasenameNoExtension}'
+          end,
+          cwd = '${workspaceFolder}',
+          stopOnEntry = false,
+          args = {},
+        },
+      }
+
+    end,
+  },
+  {
     "sourcegraph/sg.nvim",
     dependencies = { "nvim-lua/plenary.nvim", --[[ "nvim-telescope/telescope.nvim ]] },
 
