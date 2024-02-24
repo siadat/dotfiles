@@ -246,18 +246,6 @@ require('lazy').setup({
     },
   },
 
-  -- {
-  --   -- Theme inspired by Atom
-  --   'navarasu/onedark.nvim',
-  --   priority = 1000,
-  --   config = function()
-  --     if false and vim.fn.hostname() == "personalbox" then
-  --       vim.g.onedark_config = { style = 'darker' }
-  --       vim.cmd.colorscheme 'onedark'
-  --     end
-  --   end,
-  -- },
-
   {
     'ellisonleao/gruvbox.nvim',
     priority = 1000,
