@@ -765,55 +765,6 @@ end
 
 SinaStuff.chezmoi_sources = SinaStuff.get_chezmoi_sources()
 
--- TODO: convert chezmoi_sticky_term_win to a table to support multiple tabs
--- The reason for using a global variable is that I am re-:source-ing this file
--- on save, and I want to keep using the same terminal window.
--- If a new terminal window is opened each time then keeping track of chezmoi_sticky_term_win is pointless
--- or I shouldn't :source this file automatically on save and I will have to manually :source it or restart neovim
-vim.g.chezmoi_sticky_term_win = vim.g.chezmoi_sticky_term_win or nil
-
--- vim.api.nvim_create_autocmd({"BufWritePost"}, {
---   pattern = SinaStuff.chezmoi_sources,
---   callback = function()
---     local command = "cd ~/.local/share/chezmoi && make update_short"
---     local final_command = string.format("bash -c %q", command)
---     vim.fn.jobstart(final_command, {
---         pty = false,
---         detach = false,
---         stdout_buffered = true,
---         on_stderr = function(_, data)
---             if #data == 1 and data[1] == "" then
---                 return
---             end
---             print(string.format("STDERR for %q:", final_command), vim.inspect(data))
---         end,
---         on_stdout = function(_, data)
---             if #data == 1 and data[1] == "" then
---                 print("Chezmoi sources updated")
---                 return
---             end
---             if #data > 0 and data[1] == "HAS_DIFF" then
---                 print("Chezmoi sources updated, but found changes, please commit and push changes using :SinaReviewAndPushChezmoiChanges")
---                 return
---             end
---             print(vim.inspect(data))
---         end,
---         on_exit = function(_, code)
---             if code > 0 then
---                 vim.cmd("silent source ~/.local/share/chezmoi/dot_config/nvim/init.lua")
---             else
---                 vim.cmd("silent source ~/.config/nvim/init.lua")
---             end
---         end,
---     })
---   end,
---   group = vim.api.nvim_create_augroup('SinaSourcesUpdate', { clear = true }),
--- })
-vim.api.nvim_create_user_command("SinaReviewAndPushChezmoiChanges", function()
-  vim.cmd.vsplit()
-  vim.cmd("term cd ~/.local/share/chezmoi && make update")
-end, { nargs = 0 })
-
 -- TODO: convert diff_sticky_win to a table to support multiple tabs
 local diff_sticky_win = nil
 SinaStuff.show_or_update_diff_win = function()
@@ -1073,7 +1024,6 @@ SinaStuff.run_command_in_current_line = function()
 end
 -- vim.keymap.set('n', ';:', SinaStuff.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
 
-
 vim.keymap.set('n', ';tp', function() vim.cmd('tabprevious') end, { noremap = true, desc = "Sina: prev tab" })
 vim.keymap.set('n', ';tn', function() vim.cmd('tabnext') end, { noremap = true, desc = "Sina: next tab" })
 vim.keymap.set('n', ';ts', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
@@ -1087,34 +1037,3 @@ SinaStuff.get_root = function(bufnr, lang)
   local tree = parser:parse()[1]
   return tree:root()
 end
-
--- SinaStuff.format_script_in_yaml = function()
---   local bufnr = vim.api.nvim_get_current_buf()
---   if vim.bo[bufnr].filetype ~= "yaml" then
---     -- TODO: TIL vim.notify, use it more often!
---     vim.notify("Not a yaml file")
---     return
---   end
---   local root = SinaStuff.get_root(bufnr, "yaml")
---   local query_string = [[
---   (
---     (block_mapping_pair
---       key: (_) @key1
---       value: (block_node (block_scalar)) @injection.language
---     )
---     (block_mapping_pair
---       key: (_) @key
---       value: ((block_node (block_scalar)) @value)  @injection.content
---     )
---     (#eq? @key1 "language")
---     (#eq? @key "content")
---   )
---   ]]
---   local query = vim.treesitter.query.parse("yaml", query_string)
---   for id, node in query:iter_captures(root, bufnr, 0, -1) do
---     local node_text = string.format(">> %q", vim.treesitter.get_node_text(node, bufnr))
---     print(id, node_text)
---   end
--- end
--- vim.api.nvim_create_user_command("FormatScriptInYaml", SinaStuff.format_script_in_yaml, { nargs = 0 })
--- SinaStuff.format_script_in_yaml()
