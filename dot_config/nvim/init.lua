@@ -722,6 +722,7 @@ vim.wo.number = not true
 vim.wo.relativenumber = false
 vim.wo.wrap = false
 vim.o.wrapscan = false
+vim.o.inccommand = 'split'
 
 local SinaStuff = {}
 
