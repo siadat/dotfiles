@@ -928,12 +928,12 @@ SinaStuff.telescope_wrapper = function(opts)
 
     }):find()
 end
+
 vim.keymap.set('n', ';v', function()
   local files = SinaStuff.get_chezmoi_sources()
   local commands = {}
   for _,v in ipairs(files) do
     local command = string.format("tabnew %s", v)
-    -- remove ".../.local/share/chezmoi/" from v:
     display = string.gsub(v, "^.*sina/.local/share/chezmoi/", "")
     table.insert(commands, {display, command})
   end
