@@ -1064,7 +1064,7 @@ end
 vim.api.nvim_create_autocmd({"BufReadCmd"}, {
   pattern = "docker://containers",
   callback = function()
-    SinaStuff.execute_command("docker inspect $(docker ps -q -a)", function(code, stdout, stderr)
+    SinaStuff.execute_command("docker inspect $(docker ps -q)", function(code, stdout, stderr)
       -- TODO: nnoremap <buffer> q :bwipeout!<CR>
 
       local containers = vim.json.decode(stdout)
