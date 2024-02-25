@@ -1044,8 +1044,6 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
   pattern = "docker://containers",
   callback = function()
     SinaStuff.execute_command("docker inspect $(docker ps -q)", function(code, stdout, stderr)
-      local items = {}
-
       -- TODO: nnoremap <buffer> q :bwipeout!<CR>
 
       local convert_seconds_to_age = function(seconds)
@@ -1070,6 +1068,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       end
 
       local containers = vim.json.decode(stdout)
+      local items = {}
       for _,container in ipairs(containers) do
         -- join all lines in the Cmd array
         -- Source: docker inspect $(docker ps -q) | jq . | less -nSR
