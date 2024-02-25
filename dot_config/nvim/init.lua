@@ -709,6 +709,7 @@ vim.o.equalalways = true
 vim.wo.number = not true
 vim.wo.relativenumber = false
 vim.wo.wrap = false
+vim.o.linebreak = true -- wrap at word boundaries, insead of in the middle of a word
 vim.o.wrapscan = false
 vim.o.inccommand = 'split'
 
