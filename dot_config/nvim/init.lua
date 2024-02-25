@@ -1039,16 +1039,9 @@ SinaStuff.get_root = function(bufnr, lang)
   return tree:root()
 end
 
-SinaStuff.docker_ps = function()
-end
-
 vim.api.nvim_create_autocmd({"BufReadCmd"}, {
   pattern = "docker://containers",
   callback = function()
-    SinaStuff.docker_ps()
-
-    vim.bo.modified = false
-
     SinaStuff.execute_command("docker inspect $(docker ps -q)", function(code, stdout, stderr)
       local items = {}
 
