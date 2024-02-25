@@ -1077,7 +1077,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
           { key = "id", value = string.sub(container.Id, 0, 8) },
           { key = "image", value = container.Config.Image },
           { key = "name", value = container.Name },
-          { key = "started_at", value = SinaStuff.convert_seconds_to_age(os.time() - vim.fn.strptime("%Y-%m-%dT%H:%M:%S", container.State.StartedAt)) },
+          { key = "age", value = SinaStuff.convert_seconds_to_age(os.time() - vim.fn.strptime("%Y-%m-%dT%H:%M:%S", container.State.StartedAt)) },
           -- vim.inspect(container.Config.Cmd),
           -- vim.inspect(container.Config.Env),
           -- vim.inspect(container.HostConfig.PortBindings)
