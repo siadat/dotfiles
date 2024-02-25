@@ -1040,32 +1040,32 @@ SinaStuff.get_root = function(bufnr, lang)
   return tree:root()
 end
 
+SinaStuff.convert_seconds_to_age = function(seconds)
+  local days = math.floor(seconds / 86400)
+  local hours = math.floor((seconds % 86400) / 3600)
+  local minutes = math.floor((seconds % 3600) / 60)
+  seconds = seconds % 60
+  local age = ""
+  if days > 0 then
+    age = age .. days .. "d"
+  end
+  if hours > 0 then
+    age = age .. hours .. "h"
+  end
+  if minutes > 0 then
+    age = age .. minutes .. "m"
+  end
+  if seconds > 0 then
+    age = age .. seconds .. "s"
+  end
+  return age
+end
+
 vim.api.nvim_create_autocmd({"BufReadCmd"}, {
   pattern = "docker://containers",
   callback = function()
     SinaStuff.execute_command("docker inspect $(docker ps -q)", function(code, stdout, stderr)
       -- TODO: nnoremap <buffer> q :bwipeout!<CR>
-
-      local convert_seconds_to_age = function(seconds)
-        local days = math.floor(seconds / 86400)
-        local hours = math.floor((seconds % 86400) / 3600)
-        local minutes = math.floor((seconds % 3600) / 60)
-        seconds = seconds % 60
-        local age = ""
-        if days > 0 then
-          age = age .. days .. "d"
-        end
-        if hours > 0 then
-          age = age .. hours .. "h"
-        end
-        if minutes > 0 then
-          age = age .. minutes .. "m"
-        end
-        if seconds > 0 then
-          age = age .. seconds .. "s"
-        end
-        return age
-      end
 
       local containers = vim.json.decode(stdout)
       local items = {}
@@ -1077,7 +1077,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
           { key = "id", value = string.sub(container.Id, 0, 8) },
           { key = "image", value = container.Config.Image },
           { key = "name", value = container.Name },
-          { key = "started_at", value = convert_seconds_to_age(os.time() - vim.fn.strptime("%Y-%m-%dT%H:%M:%S", container.State.StartedAt)) },
+          { key = "started_at", value = SinaStuff.convert_seconds_to_age(os.time() - vim.fn.strptime("%Y-%m-%dT%H:%M:%S", container.State.StartedAt)) },
           -- vim.inspect(container.Config.Cmd),
           -- vim.inspect(container.Config.Env),
           -- vim.inspect(container.HostConfig.PortBindings)
