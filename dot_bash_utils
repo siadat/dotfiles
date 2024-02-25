@@ -34,13 +34,31 @@ function capture () {
 
 function dotfiles {
 	(
+		while getopts "n" opt; do
+		  case $opt in
+		    n)
+		      NO_PUSH=true
+		      ;;
+		    \?)
+		      echo "Valid options:"
+		      echo "  -n Do not push changes to remote"
+		      exit 1
+		      ;;
+		  esac
+		done
+
 		echo "chezmoi update" && chezmoi update
 		echo "chezmoi apply" && chezmoi apply
 		cd ~/.local/share/chezmoi/
 		git add -u
 		git --no-pager diff -w --exit-code --stat -p origin/main && return
 		git status
+		if [ -n "$NO_PUSH" ]; then
+			echo "Changes not pushed to remote"
+			return
+		fi
 		read -r -p "Commit and push? [y/N] " response
+
 		case "$response" in
 			y)
 				git commit -m "chezmoi: update"

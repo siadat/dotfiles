@@ -1038,3 +1038,91 @@ SinaStuff.get_root = function(bufnr, lang)
   local tree = parser:parse()[1]
   return tree:root()
 end
+
+SinaStuff.docker_ps = function()
+end
+
+vim.api.nvim_create_autocmd({"BufReadCmd"}, {
+  pattern = "docker://containers",
+  callback = function()
+    SinaStuff.docker_ps()
+
+    vim.bo.modified = false
+
+    SinaStuff.execute_command("docker inspect $(docker ps -q)", function(code, stdout, stderr)
+      local items = {}
+
+      -- TODO: nnoremap <buffer> q :bwipeout!<CR>
+
+      local convert_seconds_to_age = function(seconds)
+        local days = math.floor(seconds / 86400)
+        local hours = math.floor((seconds % 86400) / 3600)
+        local minutes = math.floor((seconds % 3600) / 60)
+        seconds = seconds % 60
+        local age = ""
+        if days > 0 then
+          age = age .. days .. "d"
+        end
+        if hours > 0 then
+          age = age .. hours .. "h"
+        end
+        if minutes > 0 then
+          age = age .. minutes .. "m"
+        end
+        if seconds > 0 then
+          age = age .. seconds .. "s"
+        end
+        return age
+      end
+
+      local containers = vim.json.decode(stdout)
+      for _,container in ipairs(containers) do
+        -- join all lines in the Cmd array
+        -- Source: docker inspect $(docker ps -q) | jq . | less -nSR
+        table.insert(items, {
+          { key = "status", value = container.State.Status },
+          { key = "id", value = string.sub(container.Id, 0, 8) },
+          { key = "image", value = container.Config.Image },
+          { key = "name", value = container.Name },
+          { key = "started_at", value = convert_seconds_to_age(os.time() - vim.fn.strptime("%Y-%m-%dT%H:%M:%S", container.State.StartedAt)) },
+          -- vim.inspect(container.Config.Cmd),
+          -- vim.inspect(container.Config.Env),
+          -- vim.inspect(container.HostConfig.PortBindings)
+        })
+      end
+
+      local longest_values = {}
+
+      for _,item in ipairs(items) do
+        for _,col in ipairs(item) do
+          local k = col.key
+          local v = col.value
+          longest_values[k] = math.max(longest_values[k] or 0, string.len(v))
+        end
+      end
+
+      local lines = {}
+      for i,item in ipairs(items) do
+        local line = ""
+        for _,col in ipairs(item) do
+          local k = col.key
+          local v = col.value
+          local format = "%" .. (-longest_values[k]) .. "s"
+          if i == 1 then
+            line = line .. string.format(format, k) .. "  "
+          else
+            line = line .. string.format(format, v) .. "  "
+          end
+        end
+        table.insert(lines, line)
+      end
+
+      vim.bo.modifiable = true
+      vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+
+      vim.bo.modified = false
+      vim.bo.modifiable = false
+    end)
+  end,
+  group = vim.api.nvim_create_augroup('SinaDockerPs', { clear = true }),
+})
