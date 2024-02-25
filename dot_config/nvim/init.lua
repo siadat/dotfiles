@@ -1064,33 +1064,38 @@ end
 vim.api.nvim_create_autocmd({"BufReadCmd"}, {
   pattern = "docker://containers",
   callback = function()
-    SinaStuff.execute_command("docker inspect $(docker ps -q)", function(code, stdout, stderr)
+    SinaStuff.execute_command("docker inspect $(docker ps -q -a)", function(code, stdout, stderr)
       -- TODO: nnoremap <buffer> q :bwipeout!<CR>
 
       local containers = vim.json.decode(stdout)
       local items = {}
       for _,container in ipairs(containers) do
         -- join all lines in the Cmd array
+       
         -- Source: docker inspect $(docker ps -q) | jq . | less -nSR
+        local cmd = container.Config.Cmd or {}
+        if cmd == vim.NIL then
+          cmd = {}
+        end
         table.insert(items, {
+          { key = "age", value = SinaStuff.convert_seconds_to_age(os.time() - vim.fn.strptime("%Y-%m-%dT%H:%M:%S", container.State.StartedAt)) },
           { key = "status", value = container.State.Status },
           { key = "id", value = string.sub(container.Id, 0, 8) },
-          { key = "image", value = container.Config.Image },
+          { key = "image", value = string.sub(container.Config.Image, 0, 30) },
           { key = "name", value = container.Name },
-          { key = "age", value = SinaStuff.convert_seconds_to_age(os.time() - vim.fn.strptime("%Y-%m-%dT%H:%M:%S", container.State.StartedAt)) },
-          -- vim.inspect(container.Config.Cmd),
-          -- vim.inspect(container.Config.Env),
-          -- vim.inspect(container.HostConfig.PortBindings)
+          { key = "cmd", value = table.concat(cmd, " ") },
+          -- { key = "env", value = table.concat(container.Config.Env, " ") },
+          -- { key = "ports", value = vim.inspect(container.HostConfig.PortBindings) },
         })
       end
 
-      local longest_values = {}
+      local longest_value_width = {}
 
       for _,item in ipairs(items) do
         for _,col in ipairs(item) do
           local k = col.key
           local v = col.value
-          longest_values[k] = math.max(longest_values[k] or 0, string.len(v))
+          longest_value_width[k] = math.max(longest_value_width[k] or 0, string.len(v))
         end
       end
 
@@ -1100,7 +1105,8 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
         for _,col in ipairs(item) do
           local k = col.key
           local v = col.value
-          local format = "%" .. (-longest_values[k]) .. "s"
+          local width = longest_value_width[k]
+          local format = "%" .. (-width) .. "s"
           if i == 1 then
             line = line .. string.format(format, k) .. "  "
           else
