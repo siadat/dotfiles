@@ -932,24 +932,25 @@ end
 
 vim.keymap.set('n', ';v', function()
   local files = SinaStuff.get_chezmoi_sources()
-  local commands = {}
+  local items = {}
   for _,v in ipairs(files) do
     local command = string.format("tabnew %s", v)
     local display = string.gsub(v, "^.*/.local/share/chezmoi/", "")
-    table.insert(commands, {display, command})
+    table.insert(items, {display, command})
   end
   SinaStuff.telescope_wrapper({
     telescope_opts = require("telescope.themes").get_dropdown{},
-    items = commands,
+    items = items,
   })
 end, { desc = 'Sina: open dotfiles with Telescope' })
 
 vim.keymap.set('n', ';f', function()
-  local commands = SinaStuff.get_commandsfile()
+  local items = SinaStuff.get_commandsfile()
   SinaStuff.telescope_wrapper({
-    items = commands,
+    items = items,
   })
 end, { desc = 'Sina: open common files with Telescope' })
+
 SinaStuff.get_commandsfile = function()
   -- curl -L "https://github.com/mikefarah/yq/releases/download/v4.40.5/yq_linux_amd64" -o ~/bin/yq && chmod +x ~/bin/yq
   local commandsfile = vim.fn.system("yq -o json ~/commandsfile.yaml")
