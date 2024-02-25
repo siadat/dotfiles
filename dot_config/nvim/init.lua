@@ -935,7 +935,7 @@ vim.keymap.set('n', ';v', function()
   local commands = {}
   for _,v in ipairs(files) do
     local command = string.format("tabnew %s", v)
-    display = string.gsub(v, "^.*sina/.local/share/chezmoi/", "")
+    local display = string.gsub(v, "^.*/.local/share/chezmoi/", "")
     table.insert(commands, {display, command})
   end
   SinaStuff.telescope_wrapper({
