@@ -34,10 +34,10 @@ function capture () {
 
 function dotfiles {
 	(
-		while getopts "n" opt; do
+		while getopts "d" opt; do
 		  case $opt in
-		    n)
-		      NO_PUSH=true
+		    d)
+		      DEV=true
 		      ;;
 		    \?)
 		      echo "Valid options:"
@@ -47,13 +47,17 @@ function dotfiles {
 		  esac
 		done
 
-		echo "chezmoi update" && chezmoi update
+		if [ ! -n "$DEV" ]; then
+			echo "chezmoi update" && chezmoi update
+		fi
+
 		echo "chezmoi apply" && chezmoi apply
 		cd ~/.local/share/chezmoi/
 		git add -u
 		git --no-pager diff -w --exit-code --stat -p origin/main && return
 		git status
-		if [ -n "$NO_PUSH" ]; then
+
+		if [ -n "$DEV" ]; then
 			echo "Changes not pushed to remote"
 			return
 		fi

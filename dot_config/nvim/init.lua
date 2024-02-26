@@ -844,8 +844,9 @@ SinaStuff.execute_command_stream = function(command, callback)
   return vim.fn.jobstart(command, {
     pty = false,
     detach = false,
-    stdout_buffered = false,
+    stdout_buffered = false, -- TODO: true?
     on_stdout = function(_, data)
+      -- the last item always seems to be empty string ""
       --local lines = table.concat(data, "\n")
       callback({stdout = data})
     end,
@@ -1152,39 +1153,53 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
     vim.api.nvim_buf_set_option(0, 'bufhidden', 'hide') -- The buffer is hidden when abandoned
     vim.api.nvim_buf_set_option(0, 'swapfile', false) -- No swap file for the buffer
 
-    local job_id = nil
+    -- If there's a job still running, stop it
+    if SinaStuff.nshell_job_id ~= nil then
+      vim.fn.jobstop(SinaStuff.nshell_job_id)
+    end
+
+    -- TODO: support history
+    -- TODO: support stdin
+
     local stop_command = function()
-      vim.fn.jobstop(job_id)
+      if SinaStuff.nshell_job_id ~= nil then
+        vim.fn.jobstop(SinaStuff.nshell_job_id)
+      end
       vim.api.nvim_command('stopinsert')
+      -- -- send a <c-c>
+      -- vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<c-c>', true, false, true), 'n', false)
     end
 
     local on_enter = function()
       local command = tostring(vim.api.nvim_get_current_line())
 
-      vim.api.nvim_buf_set_lines(0, 0, -1, false, {})
-
       local pos = vim.api.nvim_win_get_cursor(0)
       local start_line = pos[1]
       vim.api.nvim_buf_set_lines(0, 0, -1, false, {command})
 
-      job_id = SinaStuff.execute_command_stream(command, function(event)
+      SinaStuff.nshell_job_id = SinaStuff.execute_command_stream(command, function(event)
         if event.stdout ~= nil then
-          --local lines = vim.fn.split(event.stdout, "\n")
           vim.api.nvim_buf_set_lines(0, start_line, -1, false, event.stdout)
           start_line = start_line + #event.stdout
         end
+
+        if event.stderr ~= nil then
+          vim.api.nvim_buf_set_lines(0, start_line, -1, false, event.stderr)
+          start_line = start_line + #event.stderr
+        end
+
         if event.code ~= nil then
-          vim.api.nvim_buf_set_lines(0, start_line, -1, false, {"[Process exited with code " .. event.code .. "]"})
+          local exit_lines = {"[Process exited with code " .. event.code .. "]"}
+          vim.api.nvim_buf_set_lines(0, start_line, -1, false, exit_lines)
+          start_line = start_line + #exit_lines
         end
         vim.bo.modified = false
       end)
-
       vim.api.nvim_command('stopinsert')
-      return false
     end
 
-    vim.keymap.set('n', '<CR>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
-    vim.keymap.set('i', '<CR>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
+    vim.keymap.set('n', '<cr>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
+    vim.keymap.set('i', '<cr>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
     vim.keymap.set('n', '<c-c>', stop_command, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
     vim.keymap.set('i', '<c-c>', stop_command, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
   end,
