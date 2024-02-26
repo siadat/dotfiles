@@ -847,11 +847,18 @@ SinaStuff.execute_command_stream = function(command, callback)
     stdout_buffered = false, -- TODO: true?
     on_stdout = function(_, data)
       -- the last item always seems to be empty string ""
-      --local lines = table.concat(data, "\n")
+      -- so we remove it
+      if data[#data] == "" then
+        table.remove(data, #data)
+      end
       callback({stdout = data})
     end,
     on_stderr = function(_, data)
-      --local lines = table.concat(data, "\n")
+      -- the last item always seems to be empty string ""
+      -- so we remove it
+      if data[#data] == "" then
+        table.remove(data, #data)
+      end
       callback({stderr = data})
     end,
     on_exit = function(_, code)
@@ -1153,11 +1160,6 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
     vim.api.nvim_buf_set_option(0, 'bufhidden', 'hide') -- The buffer is hidden when abandoned
     vim.api.nvim_buf_set_option(0, 'swapfile', false) -- No swap file for the buffer
 
-    -- If there's a job still running, stop it
-    if SinaStuff.nshell_job_id ~= nil then
-      vim.fn.jobstop(SinaStuff.nshell_job_id)
-    end
-
     -- TODO: support history
     -- TODO: support stdin
 
@@ -1171,8 +1173,12 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
     end
 
     local on_enter = function()
-      local command = tostring(vim.api.nvim_get_current_line())
+      -- If there's a job still running, stop it
+      if SinaStuff.nshell_job_id ~= nil then
+        vim.fn.jobstop(SinaStuff.nshell_job_id)
+      end
 
+      local command = tostring(vim.api.nvim_get_current_line())
       local pos = vim.api.nvim_win_get_cursor(0)
       local start_line = pos[1]
       vim.api.nvim_buf_set_lines(0, 0, -1, false, {command})
@@ -1198,10 +1204,9 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       vim.api.nvim_command('stopinsert')
     end
 
-    vim.keymap.set('n', '<cr>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
     vim.keymap.set('i', '<cr>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
-    vim.keymap.set('n', '<c-c>', stop_command, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
-    vim.keymap.set('i', '<c-c>', stop_command, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
+    vim.keymap.set('n', '<c-c>', stop_command, { noremap = true, desc = "Sina: stop running command", buffer = 0 })
+    vim.keymap.set('i', '<c-c>', stop_command, { noremap = true, desc = "Sina: stop running command", buffer = 0 })
   end,
   group = vim.api.nvim_create_augroup('SinaDockerPs', { clear = true }),
 })
