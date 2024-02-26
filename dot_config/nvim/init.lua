@@ -846,12 +846,12 @@ SinaStuff.execute_command_stream = function(command, callback)
     detach = false,
     stdout_buffered = false,
     on_stdout = function(_, data)
-      local lines = table.concat(data, "\n")
-      callback({stdout = lines})
+      --local lines = table.concat(data, "\n")
+      callback({stdout = data})
     end,
     on_stderr = function(_, data)
-      local lines = table.concat(data, "\n")
-      callback({stderr = lines})
+      --local lines = table.concat(data, "\n")
+      callback({stderr = data})
     end,
     on_exit = function(_, code)
       callback({code = code})
@@ -1169,9 +1169,9 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
 
       job_id = SinaStuff.execute_command_stream(command, function(event)
         if event.stdout ~= nil then
-          local lines = vim.fn.split(event.stdout, "\n")
-          vim.api.nvim_buf_set_lines(0, start_line, -1, false, lines)
-          start_line = start_line + #lines
+          --local lines = vim.fn.split(event.stdout, "\n")
+          vim.api.nvim_buf_set_lines(0, start_line, -1, false, event.stdout)
+          start_line = start_line + #event.stdout
         end
         if event.code ~= nil then
           vim.api.nvim_buf_set_lines(0, start_line, -1, false, {"[Process exited with code " .. event.code .. "]"})
