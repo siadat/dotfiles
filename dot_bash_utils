@@ -62,7 +62,7 @@ function dotfiles {
 		case "$response" in
 			y)
 				git commit -m "chezmoi: update"
-				git push
+				git push origin HEAD
 				;;
 			*)
 				echo "Aborted"
