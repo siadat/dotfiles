@@ -1125,3 +1125,23 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
   end,
   group = vim.api.nvim_create_augroup('SinaDockerPs', { clear = true }),
 })
+
+vim.api.nvim_create_autocmd({"BufReadCmd"}, {
+  pattern = "nshell://new",
+  callback = function()
+    local on_enter = function()
+      local command = tostring(vim.api.nvim_get_current_line())
+      SinaStuff.execute_command(command, function(code, stdout, stderr)
+        local lines = vim.fn.split(stdout, "\n")
+        local pos = vim.api.nvim_win_get_cursor(0)
+        local pos_line = pos[1]
+        vim.api.nvim_buf_set_lines(0, pos_line, -1, false, lines)
+        vim.bo.modified = false
+      end)
+      return false
+    end
+    vim.keymap.set('n', '<CR>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
+    vim.keymap.set('i', '<CR>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
+  end,
+  group = vim.api.nvim_create_augroup('SinaDockerPs', { clear = true }),
+})
