@@ -840,6 +840,25 @@ SinaStuff.execute_command = function(command, callback)
   })
 end
 
+SinaStuff.execute_command_stream = function(command, callback)
+  return vim.fn.jobstart(command, {
+    pty = false,
+    detach = false,
+    stdout_buffered = false,
+    on_stdout = function(_, data)
+      local lines = table.concat(data, "\n")
+      callback({stdout = lines})
+    end,
+    on_stderr = function(_, data)
+      local lines = table.concat(data, "\n")
+      callback({stderr = lines})
+    end,
+    on_exit = function(_, code)
+      callback({code = code})
+    end
+  })
+end
+
 SinaStuff.commit_all = function()
   local command = vim.fn.trim(SinaStuff.syntax_highlighted_content("bash", [[
     file=$(mktemp)
@@ -1129,19 +1148,45 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
 vim.api.nvim_create_autocmd({"BufReadCmd"}, {
   pattern = "nshell://new",
   callback = function()
+    vim.api.nvim_buf_set_option(0, 'buftype', 'nofile') -- The buffer is not related to a file
+    vim.api.nvim_buf_set_option(0, 'bufhidden', 'hide') -- The buffer is hidden when abandoned
+    vim.api.nvim_buf_set_option(0, 'swapfile', false) -- No swap file for the buffer
+
+    local job_id = nil
+    local stop_command = function()
+      vim.fn.jobstop(job_id)
+      vim.api.nvim_command('stopinsert')
+    end
+
     local on_enter = function()
       local command = tostring(vim.api.nvim_get_current_line())
-      SinaStuff.execute_command(command, function(code, stdout, stderr)
-        local lines = vim.fn.split(stdout, "\n")
-        local pos = vim.api.nvim_win_get_cursor(0)
-        local pos_line = pos[1]
-        vim.api.nvim_buf_set_lines(0, pos_line, -1, false, lines)
+
+      vim.api.nvim_buf_set_lines(0, 0, -1, false, {})
+
+      local pos = vim.api.nvim_win_get_cursor(0)
+      local start_line = pos[1]
+      vim.api.nvim_buf_set_lines(0, 0, -1, false, {command})
+
+      job_id = SinaStuff.execute_command_stream(command, function(event)
+        if event.stdout ~= nil then
+          local lines = vim.fn.split(event.stdout, "\n")
+          vim.api.nvim_buf_set_lines(0, start_line, -1, false, lines)
+          start_line = start_line + #lines
+        end
+        if event.code ~= nil then
+          vim.api.nvim_buf_set_lines(0, start_line, -1, false, {"[Process exited with code " .. event.code .. "]"})
+        end
         vim.bo.modified = false
       end)
+
+      vim.api.nvim_command('stopinsert')
       return false
     end
+
     vim.keymap.set('n', '<CR>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
     vim.keymap.set('i', '<CR>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
+    vim.keymap.set('n', '<c-c>', stop_command, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
+    vim.keymap.set('i', '<c-c>', stop_command, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
   end,
   group = vim.api.nvim_create_augroup('SinaDockerPs', { clear = true }),
 })
