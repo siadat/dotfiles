@@ -1204,6 +1204,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       vim.api.nvim_command('stopinsert')
     end
 
+    vim.keymap.set('n', '<cr>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
     vim.keymap.set('i', '<cr>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
     vim.keymap.set('n', '<c-c>', stop_command, { noremap = true, desc = "Sina: stop running command", buffer = 0 })
     vim.keymap.set('i', '<c-c>', stop_command, { noremap = true, desc = "Sina: stop running command", buffer = 0 })
