@@ -841,15 +841,29 @@ SinaStuff.execute_command = function(command, callback)
 end
 
 SinaStuff.execute_command_stream = function(command, callback)
+  local pty = true
+
+  if pty then
+    -- ANSI escape codes are not rendered well in pty mode,
+    -- so we disable them by piping through `cat`:t log
+    command = string.format("%s | cat", command)
+  end
+
   return vim.fn.jobstart(command, {
-    pty = false,
+    pty = pty,
     detach = false,
     stdout_buffered = false, -- TODO: true?
     on_stdout = function(_, data)
       -- the last item always seems to be empty string ""
       -- so we remove it
-      if data[#data] == "" then
-        table.remove(data, #data)
+      if data[#data] == "" then table.remove(data, #data)
+      end
+
+      if pty then
+        -- when pty=true, each line ends with "\r", so we remove it
+        for i, line in ipairs(data) do
+          data[i] = string.gsub(line, "\r$", "")
+        end
       end
       callback({stdout = data})
     end,
@@ -1185,8 +1199,26 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
 
       SinaStuff.nshell_job_id = SinaStuff.execute_command_stream(command, function(event)
         if event.stdout ~= nil then
+          if #event.stdout == 0 then
+            return
+          end
           vim.api.nvim_buf_set_lines(0, start_line, -1, false, event.stdout)
           start_line = start_line + #event.stdout
+
+          -- if the word "password" appears in the last line of output
+          -- and that line ends with ":" followed by any number of spaces in one call to string.match,
+          -- then prompt for a password
+          local last_line = event.stdout[#event.stdout]
+          if string.match(last_line, "password.*:%s*$") then
+            vim.defer_fn(function()
+              -- return early if job is not running
+              if SinaStuff.nshell_job_id == nil then
+                return
+              end
+              local password = vim.fn.inputsecret(last_line)
+              vim.fn.chansend(SinaStuff.nshell_job_id, password .. "\n")
+            end, 0)
+          end
         end
 
         if event.stderr ~= nil then
