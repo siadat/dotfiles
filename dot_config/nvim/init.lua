@@ -1195,6 +1195,41 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       vim.api.nvim_buf_set_lines(buf, 1, -1, false, history_lines)
     end
 
+    local maybe_prompt_password = function(line)
+      if string.match(line, "password.*:%s*$") then
+        vim.defer_fn(function()
+          local password = vim.fn.inputsecret(line)
+          vim.fn.chansend(SinaStuff.nshell_chan_id, password .. "\n")
+        end, 0)
+      end
+    end
+
+    local insert_output = function(buf, data)
+      -- replace '\r' with '\n' at the end of each line
+      for i,line in ipairs(data) do
+        data[i] = string.gsub(line, "\r$", "")
+      end
+      local line_count = vim.api.nvim_buf_line_count(buf)
+      local first_line = ""
+      local insert_start = -2
+
+      if line_count == 1 then
+        -- first line is the prompt, we don't need to complete it
+        insert_start = 2
+        first_line = data[1]
+      else
+        local last_lines = vim.api.nvim_buf_get_lines(buf, -2, -1, false)
+        -- complete the previous line (see channel.txt)
+        first_line = last_lines[1] .. data[1]
+      end
+
+      -- append (last item may be a partial line, until EOF)
+      vim.api.nvim_buf_set_lines(buf, insert_start, -1, false, vim.list_extend(
+        {first_line},
+        vim.list_slice(data, 2, #data)
+      ))
+    end
+
     local stop_command = function()
       if SinaStuff.nshell_chan_id ~= nil then
         vim.fn.jobstop(SinaStuff.nshell_chan_id)
@@ -1217,9 +1252,6 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       SinaStuff.append_to_file(os.getenv("HOME") .. "/.nshell_history", command)
       vim.api.nvim_buf_set_lines(buf, 0, -1, false, {command})
 
-      -- See channel.txt for why we are doing this
-      local output_lines = {""}
-
       SinaStuff.nshell_chan_id = SinaStuff.execute_command_stream(command, function(event)
         -- ignore events from older channels
         if event.channel ~= SinaStuff.nshell_chan_id then
@@ -1234,47 +1266,17 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
           return
         end
         -- TODO: support pwd changing (cd)
-
-        -- TODO: make this efficient (atm it is holding all lines in the lines variable,
-        -- and re-inserting all lines each time)
-
         if event.stdout ~= nil then
-          -- replace '\r' with '\n' at the end of each line
-          for i,line in ipairs(event.stdout) do
-            event.stdout[i] = string.gsub(line, "\r$", "")
-          end
-          -- complete the previous line (see channel.txt)
-          output_lines[#output_lines] = output_lines[#output_lines] .. event.stdout[1]
-          -- append (last item may be a partial line, until EOF)
-          output_lines = vim.list_extend(output_lines, vim.list_slice(event.stdout, 2, #event.stdout))
+          insert_output(buf, event.stdout)
         end
 
         if event.stderr ~= nil then
-          -- replace '\r' with '\n' at the end of each line
-          for i,line in ipairs(event.stderr) do
-            event.stderr[i] = string.gsub(line, "\r$", "")
-          end
-          -- complete the previous line (see channel.txt)
-          output_lines[#output_lines] = output_lines[#output_lines] .. event.stderr[1]
-          -- append (last item may be a partial line, until EOF)
-          output_lines = vim.list_extend(output_lines, vim.list_slice(event.stderr, 2, #event.stderr))
+          insert_output(buf, event.stderr)
         end
 
-        vim.api.nvim_buf_set_lines(buf, 1, -1, false, output_lines)
-
-        if #output_lines > 0 then
-          -- password prompt (TODO: check stderr as well)
-          local _last_line = output_lines[#output_lines]
-          if string.match(_last_line, "password.*:%s*$") then
-            vim.defer_fn(function()
-              -- return early if job is not running
-              if SinaStuff.nshell_chan_id == nil then
-                return
-              end
-              local password = vim.fn.inputsecret(_last_line)
-              vim.fn.chansend(SinaStuff.nshell_chan_id, password .. "\n")
-            end, 0)
-          end
+        if event.stdout ~= nil then
+          local last_line = vim.api.nvim_buf_get_lines(buf, -2, -1, false)
+          maybe_prompt_password(last_line[1])
         end
 
         vim.bo.modified = false
