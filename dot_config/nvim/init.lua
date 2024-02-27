@@ -1219,7 +1219,6 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
 
       -- See channel.txt for why we are doing this
       local output_lines = {""}
-      -- local start_time = os.time()
 
       SinaStuff.nshell_chan_id = SinaStuff.execute_command_stream(command, function(event)
         -- ignore events from older channels
@@ -1228,10 +1227,8 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
         end
 
         if event.code ~= nil then
-          -- local exit_lines = {"[Process exited with code " .. event.code .. "]"}
           local exit_lines = {
             string.format("[Process exited with code %d]", event.code),
-            -- string.format("[Execution took %s]", SinaStuff.convert_seconds_to_age(os.time() - start_time)),
           }
           vim.api.nvim_buf_set_lines(buf, -1, -1, false, exit_lines)
           return
