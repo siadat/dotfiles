@@ -1252,6 +1252,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       if command == "history" then
         command = "cat ~/.nshell_history"
       end
+      -- TODO: support cwd changing (cd)
 
       SinaStuff.append_to_file(os.getenv("HOME") .. "/.nshell_history", command)
       vim.api.nvim_buf_set_lines(buf, 0, -1, false, {command})
@@ -1269,7 +1270,6 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
           vim.api.nvim_buf_set_lines(buf, -1, -1, false, exit_lines)
           return
         end
-        -- TODO: support pwd changing (cd)
         if event.stdout ~= nil then
           insert_output(buf, event.stdout)
         end
