@@ -1249,6 +1249,10 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       end
 
       local command = tostring(vim.api.nvim_get_current_line())
+      if command == "history" then
+        command = "cat ~/.nshell_history"
+      end
+
       SinaStuff.append_to_file(os.getenv("HOME") .. "/.nshell_history", command)
       vim.api.nvim_buf_set_lines(buf, 0, -1, false, {command})
 
