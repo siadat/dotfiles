@@ -854,12 +854,15 @@ SinaStuff.execute_command_stream = function(command, callback)
     detach = false,
     stdout_buffered = false, -- TODO: true?
     on_stdout = function(chan, data)
+      print("stdout")
       callback({stdout = data, channel = chan})
     end,
     on_stderr = function(chan, data)
+      print("stderr")
       callback({stderr = data, channel = chan})
     end,
     on_exit = function(chan, code)
+      print("exit")
       callback({code = code, channel = chan})
     end
   })
@@ -1080,9 +1083,7 @@ SinaStuff.convert_seconds_to_age = function(seconds)
   if minutes > 0 then
     age = age .. minutes .. "m"
   end
-  if seconds > 0 then
-    age = age .. seconds .. "s"
-  end
+  age = age .. seconds .. "s"
   return age
 end
 
@@ -1217,51 +1218,56 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       vim.api.nvim_buf_set_lines(buf, 0, -1, false, {command})
 
       -- See channel.txt for why we are doing this
-      local lines = {""}
+      local output_lines = {""}
+      -- local start_time = os.time()
 
       SinaStuff.nshell_chan_id = SinaStuff.execute_command_stream(command, function(event)
-        if first_event then
-          first_event = false
-          vim.api.nvim_buf_set_lines(buf, -1, -1, false, {})
-        end
-
         -- ignore events from older channels
         if event.channel ~= SinaStuff.nshell_chan_id then
           return
         end
 
         if event.code ~= nil then
-          local exit_lines = {"[Process exited with code " .. event.code .. "]"}
+          -- local exit_lines = {"[Process exited with code " .. event.code .. "]"}
+          local exit_lines = {
+            string.format("[Process exited with code %d]", event.code),
+            -- string.format("[Execution took %s]", SinaStuff.convert_seconds_to_age(os.time() - start_time)),
+          }
           vim.api.nvim_buf_set_lines(buf, -1, -1, false, exit_lines)
           return
         end
+        -- TODO: support pwd changing (cd)
 
         -- TODO: make this efficient (atm it is holding all lines in the lines variable,
         -- and re-inserting all lines each time)
 
         if event.stdout ~= nil then
+          -- replace '\r' with '\n' at the end of each line
+          for i,line in ipairs(event.stdout) do
+            event.stdout[i] = string.gsub(line, "\r$", "")
+          end
           -- complete the previous line (see channel.txt)
-          lines[#lines] = lines[#lines] .. event.stdout[1]
+          output_lines[#output_lines] = output_lines[#output_lines] .. event.stdout[1]
           -- append (last item may be a partial line, until EOF)
-          lines = vim.list_extend(lines, vim.list_slice(event.stdout, 2, #event.stdout))
+          output_lines = vim.list_extend(output_lines, vim.list_slice(event.stdout, 2, #event.stdout))
         end
 
         if event.stderr ~= nil then
+          -- replace '\r' with '\n' at the end of each line
+          for i,line in ipairs(event.stderr) do
+            event.stderr[i] = string.gsub(line, "\r$", "")
+          end
           -- complete the previous line (see channel.txt)
-          lines[#lines] = lines[#lines] .. event.stderr[1]
+          output_lines[#output_lines] = output_lines[#output_lines] .. event.stderr[1]
           -- append (last item may be a partial line, until EOF)
-          lines = vim.list_extend(lines, vim.list_slice(event.stderr, 2, #event.stderr))
+          output_lines = vim.list_extend(output_lines, vim.list_slice(event.stderr, 2, #event.stderr))
         end
 
-        -- replace '\r' with '\n' at the end of each line
-        for i,line in ipairs(lines) do
-          lines[i] = string.gsub(line, "\r$", "")
-        end
-        vim.api.nvim_buf_set_lines(buf, 1, -1, false, lines)
+        vim.api.nvim_buf_set_lines(buf, 1, -1, false, output_lines)
 
-        if #lines > 0 then
+        if #output_lines > 0 then
           -- password prompt (TODO: check stderr as well)
-          local _last_line = lines[#lines]
+          local _last_line = output_lines[#output_lines]
           if string.match(_last_line, "password.*:%s*$") then
             vim.defer_fn(function()
               -- return early if job is not running
