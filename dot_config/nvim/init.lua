@@ -854,25 +854,9 @@ SinaStuff.execute_command_stream = function(command, callback)
     detach = false,
     stdout_buffered = false, -- TODO: true?
     on_stdout = function(_, data)
-      -- the last item always seems to be empty string ""
-      -- so we remove it
-      if data[#data] == "" then table.remove(data, #data)
-      end
-
-      if pty then
-        -- when pty=true, each line ends with "\r", so we remove it
-        for i, line in ipairs(data) do
-          data[i] = string.gsub(line, "\r$", "")
-        end
-      end
       callback({stdout = data})
     end,
     on_stderr = function(_, data)
-      -- the last item always seems to be empty string ""
-      -- so we remove it
-      if data[#data] == "" then
-        table.remove(data, #data)
-      end
       callback({stderr = data})
     end,
     on_exit = function(_, code)
@@ -1187,50 +1171,53 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
     end
 
     local on_enter = function()
+      print("---------------")
       -- If there's a job still running, stop it
       if SinaStuff.nshell_job_id ~= nil then
         vim.fn.jobstop(SinaStuff.nshell_job_id)
       end
 
       local command = tostring(vim.api.nvim_get_current_line())
-      local pos = vim.api.nvim_win_get_cursor(0)
-      local start_line = pos[1]
       vim.api.nvim_buf_set_lines(0, 0, -1, false, {command})
 
       SinaStuff.nshell_job_id = SinaStuff.execute_command_stream(command, function(event)
-        if event.stdout ~= nil then
-          if #event.stdout == 0 then
-            return
-          end
-          vim.api.nvim_buf_set_lines(0, start_line, -1, false, event.stdout)
-          start_line = start_line + #event.stdout
-
-          -- if the word "password" appears in the last line of output
-          -- and that line ends with ":" followed by any number of spaces in one call to string.match,
-          -- then prompt for a password
-          local last_line = event.stdout[#event.stdout]
-          if string.match(last_line, "password.*:%s*$") then
-            vim.defer_fn(function()
-              -- return early if job is not running
-              if SinaStuff.nshell_job_id == nil then
-                return
-              end
-              local password = vim.fn.inputsecret(last_line)
-              vim.fn.chansend(SinaStuff.nshell_job_id, password .. "\n")
-            end, 0)
-          end
-        end
-
-        if event.stderr ~= nil then
-          vim.api.nvim_buf_set_lines(0, start_line, -1, false, event.stderr)
-          start_line = start_line + #event.stderr
-        end
-
         if event.code ~= nil then
           local exit_lines = {"[Process exited with code " .. event.code .. "]"}
-          vim.api.nvim_buf_set_lines(0, start_line, -1, false, exit_lines)
-          start_line = start_line + #exit_lines
+          vim.api.nvim_buf_set_lines(0, -1, -1, false, exit_lines)
+          return
         end
+
+        local chunks = {}
+        chunks = vim.list_extend(chunks, event.stdout or {})
+        chunks = vim.list_extend(chunks, event.stderr or {})
+
+        local text = table.concat(chunks, "")
+        if text == "" then
+          return
+        end
+
+        -- local row = vim.fn.line("$") - 1
+        -- local col = vim.fn.col("$") - 1
+        local lines = vim.fn.split(text, "\r")
+
+        -- TODO: handle the case when the last line is not a complete line
+        vim.api.nvim_buf_set_lines(0, -1, -1, false, lines)
+
+        -- if the word "password" appears in the last line of output
+        -- and that line ends with ":" followed by any number of spaces in one call to string.match,
+        -- then prompt for a password
+        local last_line = lines[#lines]
+        if string.match(last_line, "password.*:%s*$") then
+          vim.defer_fn(function()
+            -- return early if job is not running
+            if SinaStuff.nshell_job_id == nil then
+              return
+            end
+            local password = vim.fn.inputsecret(last_line)
+            vim.fn.chansend(SinaStuff.nshell_job_id, password .. "\n")
+          end, 0)
+        end
+
         vim.bo.modified = false
       end)
       vim.api.nvim_command('stopinsert')
