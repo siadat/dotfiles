@@ -1171,7 +1171,6 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
     end
 
     local on_enter = function()
-      print("---------------")
       -- If there's a job still running, stop it
       if SinaStuff.nshell_job_id ~= nil then
         vim.fn.jobstop(SinaStuff.nshell_job_id)
