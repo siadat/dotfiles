@@ -1152,14 +1152,46 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
 })
 
 vim.api.nvim_create_autocmd({"BufReadCmd"}, {
-  pattern = "nshell://new",
+  pattern = "nshell://*",
   callback = function()
     vim.api.nvim_buf_set_option(0, 'buftype', 'nofile') -- The buffer is not related to a file
     vim.api.nvim_buf_set_option(0, 'bufhidden', 'hide') -- The buffer is hidden when abandoned
     vim.api.nvim_buf_set_option(0, 'swapfile', false) -- No swap file for the buffer
 
-    -- TODO: support history
     -- TODO: support stdin
+
+    function append_to_file(filepath, line)
+      -- Open the file in append mode
+      local file = io.open(filepath, "a")
+      if not file then
+        print("Could not open file: " .. filepath)
+        return
+      end
+
+      -- Append the line to the file
+      file:write(line .. "\n")
+
+      -- Close the file
+      file:close()
+    end
+
+    function read_file_reversed(file_path)
+      local file = io.open(file_path, "r") -- Open the file for reading
+      if not file then return nil, "Could not open file for reading." end
+
+      local lines = {}
+      for line in file:lines() do
+        table.insert(lines, 1, line) -- Insert each line at the beginning
+      end
+
+      file:close() -- Close the file
+      return lines
+    end
+
+    local history_lines = read_file_reversed(os.getenv("HOME") .. "/.nshell_history")
+    if history_lines ~= nil then
+      vim.api.nvim_buf_set_lines(0, 1, -1, false, history_lines)
+    end
 
     local stop_command = function()
       if SinaStuff.nshell_job_id ~= nil then
@@ -1177,6 +1209,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       end
 
       local command = tostring(vim.api.nvim_get_current_line())
+      append_to_file(os.getenv("HOME") .. "/.nshell_history", command)
       vim.api.nvim_buf_set_lines(0, 0, -1, false, {command})
 
       SinaStuff.nshell_job_id = SinaStuff.execute_command_stream(command, function(event)
