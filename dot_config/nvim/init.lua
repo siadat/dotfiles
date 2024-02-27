@@ -853,14 +853,14 @@ SinaStuff.execute_command_stream = function(command, callback)
     pty = pty,
     detach = false,
     stdout_buffered = false, -- TODO: true?
-    on_stdout = function(_, data)
-      callback({stdout = data})
+    on_stdout = function(chan, data)
+      callback({stdout = data, channel = chan})
     end,
-    on_stderr = function(_, data)
-      callback({stderr = data})
+    on_stderr = function(chan, data)
+      callback({stderr = data, channel = chan})
     end,
-    on_exit = function(_, code)
-      callback({code = code})
+    on_exit = function(chan, code)
+      callback({code = code, channel = chan})
     end
   })
 end
@@ -1195,8 +1195,8 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
     end
 
     local stop_command = function()
-      if SinaStuff.nshell_job_id ~= nil then
-        vim.fn.jobstop(SinaStuff.nshell_job_id)
+      if SinaStuff.nshell_chan_id ~= nil then
+        vim.fn.jobstop(SinaStuff.nshell_chan_id)
       end
       vim.api.nvim_command('stopinsert')
       -- -- send a <c-c>
@@ -1205,77 +1205,73 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
 
     local on_enter = function()
       -- If there's a job still running, stop it
-      if SinaStuff.nshell_job_id ~= nil then
+      if SinaStuff.nshell_chan_id ~= nil then
         -- TODO: when I run multiple commands quickly, the on_exit of the last
         -- one still is called, so jobstop is not enough apparently.
         -- Saying this, because I got multiple 'Process exited" in the buffer
-        vim.fn.jobstop(SinaStuff.nshell_job_id)
+        vim.fn.jobstop(SinaStuff.nshell_chan_id)
       end
 
       local command = tostring(vim.api.nvim_get_current_line())
       SinaStuff.append_to_file(os.getenv("HOME") .. "/.nshell_history", command)
       vim.api.nvim_buf_set_lines(buf, 0, -1, false, {command})
 
-      local start_from_newline = true
-      local last_line = ""
-      SinaStuff.nshell_job_id = SinaStuff.execute_command_stream(command, function(event)
+      -- See channel.txt for why we are doing this
+      local lines = {""}
+
+      SinaStuff.nshell_chan_id = SinaStuff.execute_command_stream(command, function(event)
+        if first_event then
+          first_event = false
+          vim.api.nvim_buf_set_lines(buf, -1, -1, false, {})
+        end
+
+        -- ignore events from older channels
+        if event.channel ~= SinaStuff.nshell_chan_id then
+          return
+        end
+
         if event.code ~= nil then
           local exit_lines = {"[Process exited with code " .. event.code .. "]"}
           vim.api.nvim_buf_set_lines(buf, -1, -1, false, exit_lines)
           return
         end
 
-        local chunks = {}
-        chunks = vim.list_extend(chunks, event.stdout or {})
-        chunks = vim.list_extend(chunks, event.stderr or {})
+        -- TODO: make this efficient (atm it is holding all lines in the lines variable,
+        -- and re-inserting all lines each time)
 
-        local text = table.concat(chunks, "")
-        if text == "" then
-          start_from_newline = true
-          last_line = ""
-          return
+        if event.stdout ~= nil then
+          -- complete the previous line (see channel.txt)
+          lines[#lines] = lines[#lines] .. event.stdout[1]
+          -- append (last item may be a partial line, until EOF)
+          lines = vim.list_extend(lines, vim.list_slice(event.stdout, 2, #event.stdout))
         end
 
-        local lines = vim.fn.split(text, "\r")
-        if #lines == 0 then
-          start_from_newline = true
-          last_line = ""
-          return
+        if event.stderr ~= nil then
+          -- complete the previous line (see channel.txt)
+          lines[#lines] = lines[#lines] .. event.stderr[1]
+          -- append (last item may be a partial line, until EOF)
+          lines = vim.list_extend(lines, vim.list_slice(event.stderr, 2, #event.stderr))
         end
 
-        -- TODO: handle the case when the last line is not a complete line
-        if start_from_newline then
-          vim.api.nvim_buf_set_lines(buf, -1, -1, false, lines)
-        else
-          local line_count = vim.api.nvim_buf_line_count(buf)
-          -- set the last line to be the last line + the first line of the new output
-          vim.api.nvim_buf_set_lines(buf, line_count-1, line_count, false, {last_line .. lines[1]})
-          -- set the rest of the lines
-          vim.api.nvim_buf_set_lines(buf, -1, -1, false, vim.list_slice(lines, 2, -1))
+        -- replace '\r' with '\n' at the end of each line
+        for i,line in ipairs(lines) do
+          lines[i] = string.gsub(line, "\r$", "")
         end
+        vim.api.nvim_buf_set_lines(buf, 1, -1, false, lines)
 
-        -- if text ends with '\n' or '\r' then set start_from_newline to true
-        last_line = lines[#lines]
-        if string.match(text, "[\n\r]$") then
-          start_from_newline = true
-        else
-          start_from_newline = false
-        end
-
-
-        -- if the word "password" appears in the last line of output
-        -- and that line ends with ":" followed by any number of spaces in one call to string.match,
-        -- then prompt for a password
-        local _last_line = lines[#lines]
-        if string.match(_last_line, "password.*:%s*$") then
-          vim.defer_fn(function()
-            -- return early if job is not running
-            if SinaStuff.nshell_job_id == nil then
-              return
-            end
-            local password = vim.fn.inputsecret(_last_line)
-            vim.fn.chansend(SinaStuff.nshell_job_id, password .. "\n")
-          end, 0)
+        if #lines > 0 then
+          -- password prompt (TODO: check stderr as well)
+          local _last_line = lines[#lines]
+          if string.match(_last_line, "password.*:%s*$") then
+            vim.defer_fn(function()
+              -- return early if job is not running
+              if SinaStuff.nshell_chan_id == nil then
+                return
+              end
+              local password = vim.fn.inputsecret(_last_line)
+              vim.fn.chansend(SinaStuff.nshell_chan_id, password .. "\n")
+            end, 0)
+          end
         end
 
         vim.bo.modified = false
