@@ -1151,46 +1151,47 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
   group = vim.api.nvim_create_augroup('SinaDockerPs', { clear = true }),
 })
 
+SinaStuff.append_to_file = function(filepath, line)
+  -- Open the file in append mode
+  local file = io.open(filepath, "a")
+  if not file then
+    print("Could not open file: " .. filepath)
+    return
+  end
+
+  -- Append the line to the file
+  file:write(line .. "\n")
+
+  -- Close the file
+  file:close()
+end
+
+SinaStuff.read_file_reversed = function(file_path)
+  local file = io.open(file_path, "r") -- Open the file for reading
+  if not file then return nil, "Could not open file for reading." end
+
+  local lines = {}
+  for line in file:lines() do
+    table.insert(lines, 1, line) -- Insert each line at the beginning
+  end
+
+  file:close() -- Close the file
+  return lines
+end
+
 vim.api.nvim_create_autocmd({"BufReadCmd"}, {
   pattern = "nshell://*",
   callback = function()
-    vim.api.nvim_buf_set_option(0, 'buftype', 'nofile') -- The buffer is not related to a file
-    vim.api.nvim_buf_set_option(0, 'bufhidden', 'hide') -- The buffer is hidden when abandoned
-    vim.api.nvim_buf_set_option(0, 'swapfile', false) -- No swap file for the buffer
+    local buf = vim.api.nvim_get_current_buf()
+
+    vim.api.nvim_buf_set_option(buf, 'buftype', 'nofile') -- The buffer is not related to a file
+    vim.api.nvim_buf_set_option(buf, 'bufhidden', 'hide') -- The buffer is hidden when abandoned
+    vim.api.nvim_buf_set_option(buf, 'swapfile', false) -- No swap file for the buffer
 
     -- TODO: support stdin
-
-    function append_to_file(filepath, line)
-      -- Open the file in append mode
-      local file = io.open(filepath, "a")
-      if not file then
-        print("Could not open file: " .. filepath)
-        return
-      end
-
-      -- Append the line to the file
-      file:write(line .. "\n")
-
-      -- Close the file
-      file:close()
-    end
-
-    function read_file_reversed(file_path)
-      local file = io.open(file_path, "r") -- Open the file for reading
-      if not file then return nil, "Could not open file for reading." end
-
-      local lines = {}
-      for line in file:lines() do
-        table.insert(lines, 1, line) -- Insert each line at the beginning
-      end
-
-      file:close() -- Close the file
-      return lines
-    end
-
-    local history_lines = read_file_reversed(os.getenv("HOME") .. "/.nshell_history")
+    local history_lines = SinaStuff.read_file_reversed(os.getenv("HOME") .. "/.nshell_history")
     if history_lines ~= nil then
-      vim.api.nvim_buf_set_lines(0, 1, -1, false, history_lines)
+      vim.api.nvim_buf_set_lines(buf, 1, -1, false, history_lines)
     end
 
     local stop_command = function()
@@ -1205,17 +1206,22 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
     local on_enter = function()
       -- If there's a job still running, stop it
       if SinaStuff.nshell_job_id ~= nil then
+        -- TODO: when I run multiple commands quickly, the on_exit of the last
+        -- one still is called, so jobstop is not enough apparently.
+        -- Saying this, because I got multiple 'Process exited" in the buffer
         vim.fn.jobstop(SinaStuff.nshell_job_id)
       end
 
       local command = tostring(vim.api.nvim_get_current_line())
-      append_to_file(os.getenv("HOME") .. "/.nshell_history", command)
-      vim.api.nvim_buf_set_lines(0, 0, -1, false, {command})
+      SinaStuff.append_to_file(os.getenv("HOME") .. "/.nshell_history", command)
+      vim.api.nvim_buf_set_lines(buf, 0, -1, false, {command})
 
+      local start_from_newline = true
+      local last_line = ""
       SinaStuff.nshell_job_id = SinaStuff.execute_command_stream(command, function(event)
         if event.code ~= nil then
           local exit_lines = {"[Process exited with code " .. event.code .. "]"}
-          vim.api.nvim_buf_set_lines(0, -1, -1, false, exit_lines)
+          vim.api.nvim_buf_set_lines(buf, -1, -1, false, exit_lines)
           return
         end
 
@@ -1225,27 +1231,49 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
 
         local text = table.concat(chunks, "")
         if text == "" then
+          start_from_newline = true
+          last_line = ""
           return
         end
 
-        -- local row = vim.fn.line("$") - 1
-        -- local col = vim.fn.col("$") - 1
         local lines = vim.fn.split(text, "\r")
+        if #lines == 0 then
+          start_from_newline = true
+          last_line = ""
+          return
+        end
 
         -- TODO: handle the case when the last line is not a complete line
-        vim.api.nvim_buf_set_lines(0, -1, -1, false, lines)
+        if start_from_newline then
+          vim.api.nvim_buf_set_lines(buf, -1, -1, false, lines)
+        else
+          local line_count = vim.api.nvim_buf_line_count(buf)
+          -- set the last line to be the last line + the first line of the new output
+          vim.api.nvim_buf_set_lines(buf, line_count-1, line_count, false, {last_line .. lines[1]})
+          -- set the rest of the lines
+          vim.api.nvim_buf_set_lines(buf, -1, -1, false, vim.list_slice(lines, 2, -1))
+        end
+
+        -- if text ends with '\n' or '\r' then set start_from_newline to true
+        last_line = lines[#lines]
+        if string.match(text, "[\n\r]$") then
+          start_from_newline = true
+        else
+          start_from_newline = false
+        end
+
 
         -- if the word "password" appears in the last line of output
         -- and that line ends with ":" followed by any number of spaces in one call to string.match,
         -- then prompt for a password
-        local last_line = lines[#lines]
-        if string.match(last_line, "password.*:%s*$") then
+        local _last_line = lines[#lines]
+        if string.match(_last_line, "password.*:%s*$") then
           vim.defer_fn(function()
             -- return early if job is not running
             if SinaStuff.nshell_job_id == nil then
               return
             end
-            local password = vim.fn.inputsecret(last_line)
+            local password = vim.fn.inputsecret(_last_line)
             vim.fn.chansend(SinaStuff.nshell_job_id, password .. "\n")
           end, 0)
         end
@@ -1255,10 +1283,10 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       vim.api.nvim_command('stopinsert')
     end
 
-    vim.keymap.set('n', '<cr>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
-    vim.keymap.set('i', '<cr>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = 0 })
-    vim.keymap.set('n', '<c-c>', stop_command, { noremap = true, desc = "Sina: stop running command", buffer = 0 })
-    vim.keymap.set('i', '<c-c>', stop_command, { noremap = true, desc = "Sina: stop running command", buffer = 0 })
+    vim.keymap.set('n', '<cr>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = buf })
+    vim.keymap.set('i', '<cr>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = buf })
+    vim.keymap.set('n', '<c-c>', stop_command, { noremap = true, desc = "Sina: stop running command", buffer = buf })
+    vim.keymap.set('i', '<c-c>', stop_command, { noremap = true, desc = "Sina: stop running command", buffer = buf })
   end,
   group = vim.api.nvim_create_augroup('SinaDockerPs', { clear = true }),
 })
