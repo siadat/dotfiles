@@ -1251,7 +1251,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       local command = tostring(vim.api.nvim_get_current_line())
       SinaStuff.append_to_file(os.getenv("HOME") .. "/.nshell_history", command)
       vim.fn.chansend(channel_id, command .. "\n")
-      vim.api.nvim_buf_set_lines(buf, 1, -1, false, {})
+      vim.api.nvim_buf_set_lines(buf, 0, -1, false, {command})
       vim.api.nvim_command('stopinsert')
     end
 
