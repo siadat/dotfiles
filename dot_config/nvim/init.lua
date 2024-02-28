@@ -810,7 +810,7 @@ SinaStuff.syntax_highlighted_content = function(language, content)
 end
 
 vim.api.nvim_create_user_command("FPB", function()
-  vim.cmd.term("fpb %")
+  vim.cmd("w !fpb")
 end, { nargs = 0 })
 
 SinaStuff.execute_command = function(command, callback)
