@@ -841,7 +841,7 @@ SinaStuff.execute_command = function(command, callback)
 end
 
 SinaStuff.execute_command_stream = function(command, callback)
-  local pty = true
+  local pty = false
 
   if pty then
     -- ANSI escape codes are not rendered well in pty mode,
@@ -852,17 +852,14 @@ SinaStuff.execute_command_stream = function(command, callback)
   return vim.fn.jobstart(command, {
     pty = pty,
     detach = false,
-    stdout_buffered = false, -- TODO: true?
+    stdout_buffered = false,
     on_stdout = function(chan, data)
-      print("stdout")
       callback({stdout = data, channel = chan})
     end,
     on_stderr = function(chan, data)
-      print("stderr")
       callback({stderr = data, channel = chan})
     end,
     on_exit = function(chan, code)
-      print("exit")
       callback({code = code, channel = chan})
     end
   })
@@ -1184,22 +1181,38 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
   pattern = "nshell://*",
   callback = function()
     local buf = vim.api.nvim_get_current_buf()
+    local channel_id = nil
+
+    local stop_command = function()
+      if channel_id ~= nil then
+        vim.fn.jobstop(channel_id)
+      end
+      -- vim.api.nvim_command('stopinsert')
+      -- send a <c-c>
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<c-c>', true, false, true), 'n', false)
+    end
 
     vim.api.nvim_buf_set_option(buf, 'buftype', 'nofile') -- The buffer is not related to a file
     vim.api.nvim_buf_set_option(buf, 'bufhidden', 'hide') -- The buffer is hidden when abandoned
     vim.api.nvim_buf_set_option(buf, 'swapfile', false) -- No swap file for the buffer
+    vim.api.nvim_create_autocmd({"BufUnload"}, {
+      buffer = buf,
+      callback = function()
+        stop_command()
+      end,
+    })
 
     -- TODO: support stdin
-    local history_lines = SinaStuff.read_file_reversed(os.getenv("HOME") .. "/.nshell_history")
-    if history_lines ~= nil then
-      vim.api.nvim_buf_set_lines(buf, 1, -1, false, history_lines)
-    end
+    -- local history_lines = SinaStuff.read_file_reversed(os.getenv("HOME") .. "/.nshell_history")
+    -- if history_lines ~= nil then
+    --   vim.api.nvim_buf_set_lines(buf, 1, -1, false, history_lines)
+    -- end
 
     local maybe_prompt_password = function(line)
       if string.match(line, "password.*:%s*$") then
         vim.defer_fn(function()
           local password = vim.fn.inputsecret(line)
-          vim.fn.chansend(SinaStuff.nshell_chan_id, password .. "\n")
+          vim.fn.chansend(channel_id, password .. "\n")
         end, 0)
       end
     end
@@ -1212,6 +1225,10 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       local line_count = vim.api.nvim_buf_line_count(buf)
       local first_line = ""
       local insert_start = -2
+
+      if line_count == 0 then
+        return
+      end
 
       if line_count == 1 then
         -- first line is the prompt, we don't need to complete it
@@ -1230,63 +1247,51 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       ))
     end
 
-    local stop_command = function()
-      if SinaStuff.nshell_chan_id ~= nil then
-        vim.fn.jobstop(SinaStuff.nshell_chan_id)
-      end
+    local on_enter = function()
+      local command = tostring(vim.api.nvim_get_current_line())
+      SinaStuff.append_to_file(os.getenv("HOME") .. "/.nshell_history", command)
+      vim.fn.chansend(channel_id, command .. "\n")
+      vim.api.nvim_buf_set_lines(buf, 1, -1, false, {})
       vim.api.nvim_command('stopinsert')
-      -- -- send a <c-c>
-      -- vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<c-c>', true, false, true), 'n', false)
     end
 
-    local on_enter = function()
-      -- If there's a job still running, stop it
-      if SinaStuff.nshell_chan_id ~= nil then
-        -- TODO: when I run multiple commands quickly, the on_exit of the last
-        -- one still is called, so jobstop is not enough apparently.
-        -- Saying this, because I got multiple 'Process exited" in the buffer
-        vim.fn.jobstop(SinaStuff.nshell_chan_id)
+    local shell = os.getenv("SHELL") or "sh"
+    channel_id = SinaStuff.execute_command_stream(string.format("%s", shell), function(event)
+      if vim.api.nvim_buf_is_loaded(buf) == false then
+        -- Buffer might have unloaded before exiting the editor.
+        return
       end
 
-      local command = tostring(vim.api.nvim_get_current_line())
-      if command == "history" then
-        command = "cat ~/.nshell_history"
+      -- ignore events from older channels
+      if event.channel ~= channel_id then
+        return
       end
-      -- TODO: support cwd changing (cd)
 
-      SinaStuff.append_to_file(os.getenv("HOME") .. "/.nshell_history", command)
-      vim.api.nvim_buf_set_lines(buf, 0, -1, false, {command})
+      if event.code ~= nil then
+        local exit_lines = {
+          string.format("[Process exited with code %d]", event.code),
+        }
+        vim.api.nvim_buf_set_lines(buf, -1, -1, false, exit_lines)
+        return
+      end
 
-      SinaStuff.nshell_chan_id = SinaStuff.execute_command_stream(command, function(event)
-        -- ignore events from older channels
-        if event.channel ~= SinaStuff.nshell_chan_id then
-          return
-        end
+      if event.stdout ~= nil then
+        insert_output(buf, event.stdout)
+      end
 
-        if event.code ~= nil then
-          local exit_lines = {
-            string.format("[Process exited with code %d]", event.code),
-          }
-          vim.api.nvim_buf_set_lines(buf, -1, -1, false, exit_lines)
-          return
-        end
-        if event.stdout ~= nil then
-          insert_output(buf, event.stdout)
-        end
+      if event.stderr ~= nil then
+        insert_output(buf, event.stderr)
+      end
 
-        if event.stderr ~= nil then
-          insert_output(buf, event.stderr)
-        end
-
-        if event.stdout ~= nil then
-          local last_line = vim.api.nvim_buf_get_lines(buf, -2, -1, false)
+      if event.stderr ~= nil then
+        local last_line = vim.api.nvim_buf_get_lines(buf, -2, -1, false)
+        if last_line[1] ~= nil then
           maybe_prompt_password(last_line[1])
         end
+      end
 
-        vim.bo.modified = false
-      end)
-      vim.api.nvim_command('stopinsert')
-    end
+      vim.bo.modified = false
+    end)
 
     vim.keymap.set('n', '<cr>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = buf })
     vim.keymap.set('i', '<cr>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = buf })
