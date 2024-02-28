@@ -1203,10 +1203,10 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
     })
 
     -- TODO: support stdin
-    -- local history_lines = SinaStuff.read_file_reversed(os.getenv("HOME") .. "/.nshell_history")
-    -- if history_lines ~= nil then
-    --   vim.api.nvim_buf_set_lines(buf, 1, -1, false, history_lines)
-    -- end
+    local history_lines = SinaStuff.read_file_reversed(os.getenv("HOME") .. "/.nshell_history")
+    if history_lines ~= nil then
+      vim.api.nvim_buf_set_lines(buf, 1, -1, false, history_lines)
+    end
 
     local maybe_prompt_password = function(line)
       if string.match(line, "password.*:%s*$") then
