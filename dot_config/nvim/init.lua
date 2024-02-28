@@ -1225,8 +1225,12 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
 
     local insert_output = function(buf, data)
       -- replace '\r' with '\n' at the end of each line
+      local output_prefix = "    "
       for i,line in ipairs(data) do
         data[i] = string.gsub(line, "\r$", "")
+        if i > 1 then
+          data[i] = output_prefix .. data[i]
+        end
       end
       local line_count = vim.api.nvim_buf_line_count(buf)
       local first_line = ""
@@ -1259,10 +1263,12 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       if channel_id == nil then
         return
       end
-      vim.fn.chansend(channel_id, command .. "\n")
 
-      -- we insert the command, becaues user might have pressed Enter on a line in the middle of the buffer.
-      vim.api.nvim_buf_set_lines(buf, 0, -1, false, {command})
+      -- TODO: only replace until start of next command
+      local current_line_number = vim.fn.line(".") - 1
+      vim.api.nvim_buf_set_lines(buf, current_line_number, -1, true, {command, ""})
+
+      vim.fn.chansend(channel_id, command .. "\n")
 
       vim.api.nvim_command('stopinsert')
     end
