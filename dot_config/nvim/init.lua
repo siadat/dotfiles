@@ -1183,7 +1183,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
     local buf = vim.api.nvim_get_current_buf()
     local channel_id = nil
 
-    local stop_command = function()
+    local stop_shell = function()
       if channel_id ~= nil then
         vim.fn.jobstop(channel_id)
       end
@@ -1198,7 +1198,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
     vim.api.nvim_create_autocmd({"BufUnload"}, {
       buffer = buf,
       callback = function()
-        stop_command()
+        stop_shell()
       end,
     })
 
@@ -1250,48 +1250,61 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
     local on_enter = function()
       local command = tostring(vim.api.nvim_get_current_line())
       SinaStuff.append_to_file(os.getenv("HOME") .. "/.nshell_history", command)
+      if channel_id == nil then
+        return
+      end
       vim.fn.chansend(channel_id, command .. "\n")
       vim.api.nvim_buf_set_lines(buf, 0, -1, false, {command})
       vim.api.nvim_command('stopinsert')
     end
 
     local shell = os.getenv("SHELL") or "sh"
-    channel_id = SinaStuff.execute_command_stream(string.format("%s", shell), function(event)
-      if vim.api.nvim_buf_is_loaded(buf) == false then
-        -- Buffer might have unloaded before exiting the editor.
-        return
-      end
-
-      -- ignore events from older channels
-      if event.channel ~= channel_id then
-        return
-      end
-
-      if event.code ~= nil then
-        local exit_lines = {
-          string.format("[Process exited with code %d]", event.code),
-        }
-        vim.api.nvim_buf_set_lines(buf, -1, -1, false, exit_lines)
-        return
-      end
-
-      if event.stdout ~= nil then
-        insert_output(buf, event.stdout)
-      end
-
-      if event.stderr ~= nil then
-        insert_output(buf, event.stderr)
-      end
-
-      if event.stderr ~= nil then
-        local last_line = vim.api.nvim_buf_get_lines(buf, -2, -1, false)
-        if last_line[1] ~= nil then
-          maybe_prompt_password(last_line[1])
+    local start_shell = function()
+      channel_id = SinaStuff.execute_command_stream(string.format("%s", shell), function(event)
+        if vim.api.nvim_buf_is_loaded(buf) == false then
+          -- Buffer might have unloaded before exiting the editor.
+          return
         end
-      end
 
-      vim.bo.modified = false
-    end)
+        -- ignore events from older channels
+        if event.channel ~= channel_id then
+          return
+        end
+
+        if event.code ~= nil then
+          local exit_lines = {
+            string.format("[Process exited with code %d]", event.code),
+          }
+          vim.api.nvim_buf_set_lines(buf, -1, -1, false, exit_lines)
+          return
+        end
+
+        if event.stdout ~= nil then
+          insert_output(buf, event.stdout)
+        end
+
+        if event.stderr ~= nil then
+          insert_output(buf, event.stderr)
+        end
+
+        if event.stderr ~= nil then
+          local last_line = vim.api.nvim_buf_get_lines(buf, -2, -1, false)
+          if last_line[1] ~= nil then
+            maybe_prompt_password(last_line[1])
+          end
+        end
+
+        vim.bo.modified = false
+      end)
+    end
+
+    local stop_command = function()
+      -- this stops the shell as well, so we need to start a new shell
+      stop_shell()
+      start_shell()
+    end
+
+    start_shell()
 
     vim.keymap.set('n', '<cr>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = buf })
     vim.keymap.set('i', '<cr>', on_enter, { noremap = true, desc = "Sina: execute command in current line", buffer = buf })
