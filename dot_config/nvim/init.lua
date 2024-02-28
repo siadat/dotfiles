@@ -820,6 +820,7 @@ SinaStuff.execute_command = function(command, callback)
     pty = false,
     detach = false,
     stdout_buffered = false,
+    clear_env = true,
     on_stdout = function(_, data)
       local lines = table.concat(data, "\n")
       if lines == "" then
@@ -840,12 +841,14 @@ SinaStuff.execute_command = function(command, callback)
   })
 end
 
-SinaStuff.execute_command_stream = function(command, callback)
-  local pty = false
+SinaStuff.execute_command_stream = function(pty, command, callback)
+  -- We need pty to support commands that want to read user input, eg for password.
+  -- But that results in commands printing ANSI codes.
+  -- That is why I pipe the output to something like `cat` as a workaround.
 
   if pty then
     -- ANSI escape codes are not rendered well in pty mode,
-    -- so we disable them by piping through `cat`:t log
+    -- so we disable them by piping through `cat`
     command = string.format("%s | cat", command)
   end
 
@@ -1182,6 +1185,8 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
   callback = function()
     local buf = vim.api.nvim_get_current_buf()
     local channel_id = nil
+    local pty = true
+    local shell = "/usr/bin/bash" --os.getenv("SHELL") or "sh"
 
     local stop_shell = function()
       if channel_id ~= nil then
@@ -1192,7 +1197,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<c-c>', true, false, true), 'n', false)
     end
 
-    vim.api.nvim_buf_set_option(buf, 'buftype', 'nofile') -- The buffer is not related to a file
+    --vim.api.nvim_buf_set_option(buf, 'buftype', 'nofile') -- The buffer is not related to a file
     vim.api.nvim_buf_set_option(buf, 'bufhidden', 'hide') -- The buffer is hidden when abandoned
     vim.api.nvim_buf_set_option(buf, 'swapfile', false) -- No swap file for the buffer
     vim.api.nvim_create_autocmd({"BufUnload"}, {
@@ -1209,7 +1214,8 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
     end
 
     local maybe_prompt_password = function(line)
-      if string.match(line, "password.*:%s*$") then
+      if string.match(line, "password.*:%s*$") or string.match(line, "Password.*:%s*$") then
+        print("SAW PASS")
         vim.defer_fn(function()
           local password = vim.fn.inputsecret(line)
           vim.fn.chansend(channel_id, password .. "\n")
@@ -1254,13 +1260,15 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
         return
       end
       vim.fn.chansend(channel_id, command .. "\n")
+
+      -- we insert the command, becaues user might have pressed Enter on a line in the middle of the buffer.
       vim.api.nvim_buf_set_lines(buf, 0, -1, false, {command})
+
       vim.api.nvim_command('stopinsert')
     end
 
-    local shell = os.getenv("SHELL") or "sh"
     local start_shell = function()
-      channel_id = SinaStuff.execute_command_stream(string.format("%s", shell), function(event)
+      channel_id = SinaStuff.execute_command_stream(pty, string.format("PS1= TERM=xterm %s --noediting --norc --noprofile", shell), function(event)
         if vim.api.nvim_buf_is_loaded(buf) == false then
           -- Buffer might have unloaded before exiting the editor.
           return
@@ -1287,7 +1295,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
           insert_output(buf, event.stderr)
         end
 
-        if event.stderr ~= nil then
+        if event.stdout ~= nil or event.stderr ~= nil then
           local last_line = vim.api.nvim_buf_get_lines(buf, -2, -1, false)
           if last_line[1] ~= nil then
             maybe_prompt_password(last_line[1])
