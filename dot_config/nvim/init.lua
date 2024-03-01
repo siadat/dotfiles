@@ -1068,6 +1068,118 @@ SinaStuff.get_root = function(bufnr, lang)
   return tree:root()
 end
 
+-- This will work like the reverse of J: it will split the args for
+-- a function call in the current line into separate lines.
+-- It will do so for the first function call in the current line.
+-- For the nested ones you can run it again.
+local explode_zig_args = function(zig_bufnr)
+  local debug = false
+
+  -- See https://tree-sitter.github.io/tree-sitter/using-parsers
+  local zig_function_call_query_string = [[
+  (
+    (FnCallArguments) @call
+  )
+  ]]
+  local query = vim.treesitter.query.parse("zig", zig_function_call_query_string)
+  local parser = vim.treesitter.get_parser(zig_bufnr, "zig", {})
+  local tree = parser:parse()[1]
+  local root = tree:root()
+
+  local call_expr_nodes = {}
+
+  local current_row = vim.fn.line(".") - 1
+  -- for id, node in query:iter_captures(root, zig_bufnr, 0, -1) do
+  for id, node, metadata in query:iter_captures(root, zig_bufnr, current_row, current_row+1) do
+    local range = { node:range() }
+    local start_row = range[1]
+    local start_col = range[2]
+    local end_row = range[3]
+    local end_col = range[4]
+
+    if current_row == start_row then
+      call_expr_nodes[#call_expr_nodes+1] = node
+
+      if debug then
+        local name = query.captures[id]
+        local text = vim.api.nvim_buf_get_text(zig_bufnr, start_row, start_col, end_row, end_col, {})
+        print("capture", id, name, node:type(), vim.inspect(metadata), vim.fn.line("."), "range", node:range(), vim.inspect(text))
+      end
+
+      -- I only want the first function call in the current line, so I'm breaking:
+      break
+    end
+  end
+
+  -- Returns the whitespaces at the beginning of the line where node starts.
+  -- Note that node itself might not start at the beginning of the line,
+  -- but we usually want to indent line level after whatever intentation is there.
+  local get_node_indent = function(node)
+    local range = { node:range() }
+    local start_row = range[1]
+    local start_col = range[2]
+    local indent = vim.api.nvim_buf_get_text(zig_bufnr, start_row, 0, start_row, start_col, {})
+    return string.match(indent[1], "^(%s*)") or ""
+  end
+
+  local get_node_text = function(node)
+    local range = { node:range() }
+    local start_row = range[1]
+    local start_col = range[2]
+    local end_row = range[3]
+    local end_col = range[4]
+    return vim.api.nvim_buf_get_text(zig_bufnr, start_row, start_col, end_row, end_col, {})
+  end
+
+  local set_node_text = function(node, lines)
+    local range = { node:range() }
+    local start_row = range[1]
+    local start_col = range[2]
+    local end_row = range[3]
+    local end_col = range[4]
+    vim.api.nvim_buf_set_text(zig_bufnr, start_row, start_col, end_row, end_col, lines)
+  end
+
+  for _, call_node in ipairs(call_expr_nodes) do
+    local indent = get_node_indent(call_node)
+
+    if debug then
+      print("parent call_indent", vim.inspect(call_indent))
+    end
+
+    local args = {}
+
+    for arg_node in call_node:iter_children() do
+      local text_lines = get_node_text(arg_node)
+      if debug then
+        print("arg:", arg_node:named(), arg_node:type(), "range", arg_node:range(), vim.inspect(text_lines))
+      end
+
+      local new_indet = "    "
+      if arg_node:named() then
+        for j,line in ipairs(text_lines) do
+          local formatted_line = indent .. new_indet .. line
+          if j == #text_lines then
+            formatted_line =  formatted_line .. ","
+          end
+          args[#args+1] = formatted_line
+        end
+      end
+    end
+
+    -- FnCallArguments include parenthesis and commas, but we have skipped them
+    -- above when we checked arg_node:named() and ignored unnamed nodes.
+    -- So we need to add them back here.
+    args = vim.list_extend({"("}, args)
+    args = vim.list_extend(args, {indent .. ")"})
+    set_node_text(call_node, args)
+  end
+end
+
+vim.api.nvim_create_user_command("ExplodeList", function()
+  explode_zig_args(vim.api.nvim_get_current_buf())
+end, { nargs = 0 })
+
 SinaStuff.convert_seconds_to_age = function(seconds)
   local days = math.floor(seconds / 86400)
   local hours = math.floor((seconds % 86400) / 3600)
