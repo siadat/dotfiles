@@ -1068,29 +1068,50 @@ SinaStuff.get_root = function(bufnr, lang)
   return tree:root()
 end
 
+-- See https://tree-sitter.github.io/tree-sitter/using-parsers
+local function_call_arguments_queries = {
+  go = [[
+  (
+    (argument_list) @call
+  )
+  ]],
+  zig = [[
+  (
+    (FnCallArguments) @call
+  )
+  ]],
+  lua = [[
+  (
+    (arguments) @call
+  )
+  ]],
+}
+
+local function_call_arguments_trailing_comma = {
+  go = true,
+  zig = true,
+  lua = false,
+}
 -- This will work like the reverse of J: it will split the args for
 -- a function call in the current line into separate lines.
 -- It will do so for the first function call in the current line.
 -- For the nested ones you can run it again.
-local explode_zig_args = function(zig_bufnr)
+local explode_lines = function(bufnr, filetype)
   local debug = false
+  if function_call_arguments_queries[filetype] == nil then
+    return
+  end
 
-  -- See https://tree-sitter.github.io/tree-sitter/using-parsers
-  local zig_function_call_query_string = [[
-  (
-    (FnCallArguments) @call
-  )
-  ]]
-  local query = vim.treesitter.query.parse("zig", zig_function_call_query_string)
-  local parser = vim.treesitter.get_parser(zig_bufnr, "zig", {})
+  local query = vim.treesitter.query.parse(filetype, function_call_arguments_queries[filetype])
+  local parser = vim.treesitter.get_parser(bufnr, filetype, {})
   local tree = parser:parse()[1]
   local root = tree:root()
 
   local call_expr_nodes = {}
 
   local current_row = vim.fn.line(".") - 1
-  -- for id, node in query:iter_captures(root, zig_bufnr, 0, -1) do
-  for id, node, metadata in query:iter_captures(root, zig_bufnr, current_row, current_row+1) do
+  -- for id, node in query:iter_captures(root, bufnr, 0, -1) do
+  for id, node, metadata in query:iter_captures(root, bufnr, current_row, current_row+1) do
     local range = { node:range() }
     local start_row = range[1]
     local start_col = range[2]
@@ -1102,7 +1123,7 @@ local explode_zig_args = function(zig_bufnr)
 
       if debug then
         local name = query.captures[id]
-        local text = vim.api.nvim_buf_get_text(zig_bufnr, start_row, start_col, end_row, end_col, {})
+        local text = vim.api.nvim_buf_get_text(bufnr, start_row, start_col, end_row, end_col, {})
         print("capture", id, name, node:type(), vim.inspect(metadata), vim.fn.line("."), "range", node:range(), vim.inspect(text))
       end
 
@@ -1118,7 +1139,7 @@ local explode_zig_args = function(zig_bufnr)
     local range = { node:range() }
     local start_row = range[1]
     local start_col = range[2]
-    local indent = vim.api.nvim_buf_get_text(zig_bufnr, start_row, 0, start_row, start_col, {})
+    local indent = vim.api.nvim_buf_get_text(bufnr, start_row, 0, start_row, start_col, {})
     return string.match(indent[1], "^(%s*)") or ""
   end
 
@@ -1128,7 +1149,7 @@ local explode_zig_args = function(zig_bufnr)
     local start_col = range[2]
     local end_row = range[3]
     local end_col = range[4]
-    return vim.api.nvim_buf_get_text(zig_bufnr, start_row, start_col, end_row, end_col, {})
+    return vim.api.nvim_buf_get_text(bufnr, start_row, start_col, end_row, end_col, {})
   end
 
   local set_node_text = function(node, lines)
@@ -1137,34 +1158,44 @@ local explode_zig_args = function(zig_bufnr)
     local start_col = range[2]
     local end_row = range[3]
     local end_col = range[4]
-    vim.api.nvim_buf_set_text(zig_bufnr, start_row, start_col, end_row, end_col, lines)
+    vim.api.nvim_buf_set_text(bufnr, start_row, start_col, end_row, end_col, lines)
   end
 
   for _, call_node in ipairs(call_expr_nodes) do
     local indent = get_node_indent(call_node)
 
     if debug then
-      print("parent call_indent", vim.inspect(call_indent))
+      print("parent indent", vim.inspect(indent))
     end
 
     local args = {}
 
-    for arg_node in call_node:iter_children() do
-      local text_lines = get_node_text(arg_node)
+    if call_node:child_count() == 0 then
+      -- No arguments, let's not change anything and keep the parenthesis in one line.
+      return
+    end
+
+    -- for arg_node in call_node:iter_children() do
+    for arg_idx = 0, call_node:named_child_count()-1 do
+      local arg_node = call_node:named_child(arg_idx)
+      local arg_lines = get_node_text(arg_node)
       if debug then
-        print("arg:", arg_node:named(), arg_node:type(), "range", arg_node:range(), vim.inspect(text_lines))
+        print("arg:", arg_node:named(), arg_node:type(), "range", arg_node:range(), vim.inspect(arg_lines))
       end
 
-      local new_indet = "    "
-      if arg_node:named() then
-        for j,line in ipairs(text_lines) do
-          local formatted_line = indent .. new_indet .. line
-          if j == #text_lines then
-            formatted_line =  formatted_line .. ","
+      local new_indent = "    "
+      -- if arg_node:named() then
+        for arg_line_idx,line in ipairs(arg_lines) do
+          local formatted_line = indent .. new_indent .. line
+          if arg_line_idx == #arg_lines then
+            local wants_trailing_comma = function_call_arguments_trailing_comma[filetype] or arg_idx < call_node:named_child_count()-1
+            if wants_trailing_comma then
+              formatted_line =  formatted_line .. ","
+            end
           end
           args[#args+1] = formatted_line
         end
-      end
+      -- end
     end
 
     -- FnCallArguments include parenthesis and commas, but we have skipped them
@@ -1177,7 +1208,8 @@ local explode_zig_args = function(zig_bufnr)
 end
 
 vim.api.nvim_create_user_command("ExplodeList", function()
-  explode_zig_args(vim.api.nvim_get_current_buf())
+  local filetype = vim.bo.filetype
+  explode_lines(vim.api.nvim_get_current_buf(), filetype)
 end, { nargs = 0 })
 
 SinaStuff.convert_seconds_to_age = function(seconds)
