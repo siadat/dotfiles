@@ -1092,6 +1092,18 @@ local function_call_arguments_trailing_comma = {
   zig = true,
   lua = false,
 }
+
+local test_exploder = function()
+  local filetype = "lua"
+  local query = vim.treesitter.query.parse(filetype, function_call_arguments_queries[filetype])
+  local parser = vim.treesitter.get_string_parser([[
+    local a = fn(1, 2, 3, 4, 5)
+  ]], filetype, {})
+  local tree = parser:parse()[1]
+  local root = tree:root()
+  -- TODO: implement the rest
+end
+
 -- This will work like the reverse of J: it will split the args for
 -- a function call in the current line into separate lines.
 -- It will do so for the first function call in the current line.
