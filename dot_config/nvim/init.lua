@@ -107,6 +107,47 @@ require('lazy').setup({
   -- Git related plugins
   'tpope/vim-fugitive',
   'tpope/vim-rhubarb',
+  {
+    'L3MON4D3/LuaSnip',
+    config = function()
+      -- Copied from https://github.com/L3MON4D3/LuaSnip/blob/a7a4b46/Examples/snippets.lua#L190
+      local ls = require("luasnip")
+      local s = ls.snippet
+      local sn = ls.snippet_node
+      local t = ls.text_node
+      local i = ls.insert_node
+      local f = ls.function_node
+      local c = ls.choice_node
+      local d = ls.dynamic_node
+      local r = ls.restore_node
+      local l = require("luasnip.extras").lambda
+      local rep = require("luasnip.extras").rep
+      local p = require("luasnip.extras").partial
+      local m = require("luasnip.extras").match
+      local n = require("luasnip.extras").nonempty
+      local dl = require("luasnip.extras").dynamic_lambda
+      local fmt = require("luasnip.extras.fmt").fmt
+      local fmta = require("luasnip.extras.fmt").fmta
+      local types = require("luasnip.util.types")
+      local conds = require("luasnip.extras.conditions")
+      local conds_expand = require("luasnip.extras.conditions.expand")
+
+      -- keybindings
+      vim.keymap.set({"i"}, "<C-K>", function() ls.expand() end, {silent = true})
+      vim.keymap.set({"i", "s"}, "<C-L>", function() ls.jump( 1) end, {silent = true})
+      vim.keymap.set({"i", "s"}, "<C-J>", function() ls.jump(-1) end, {silent = true})
+      vim.keymap.set({"i", "s"}, "<C-E>", function()
+        if ls.choice_active() then
+          ls.change_choice(1)
+        end
+      end, {silent = true})
+
+      -- snippets
+      ls.add_snippets("zig", {
+	s("info", fmt('std.log.info("[]", .{});', i(1, ""), { delimiters = "[]" })),
+      })
+    end,
+  },
 
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
