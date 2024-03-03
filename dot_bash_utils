@@ -16,7 +16,6 @@ alias gd='git diff --stat -p -w' # -U0
 alias gdc='git diff --stat -p -w --cached' # -U0
 alias gsh='git show --stat -p -w' #  -U0
 alias gs='git status'
-alias zig='LD_LIBRARY_PATH=$(brew --prefix)/lib ~/src/zig/build/stage3/bin/zig'
 
 # open results of rg in EDITOR
 function vrg() {
@@ -88,7 +87,7 @@ function build_zig_from_source() {
 		zig_clone_path=~/src/zig
 		mkdir -p $zig_clone_path/build
 		cd $zig_clone_path/build
-		cmake .. -DCMAKE_PREFIX_PATH="$(brew --prefix llvm);$(brew --prefix zstd)"
+		time cmake .. -DCMAKE_PREFIX_PATH="$(brew --prefix llvm);$(brew --prefix zstd)"
 		make install
 
 		# test

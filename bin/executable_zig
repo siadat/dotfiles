@@ -1,0 +1,3 @@
+#!/bin/bash
+# Use the Zig I built from source
+LD_LIBRARY_PATH=$(brew --prefix)/lib ~/src/zig/build/stage3/bin/zig "$@"
