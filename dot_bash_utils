@@ -74,3 +74,25 @@ function dotfiles {
 		esac
 	)
 }
+
+function build_zig_from_source() {
+	(
+		set -ex
+
+		# dependencies
+		brew list llvm || brew install llvm
+		brew list zstd || brew install zstd
+		dpkg -s libtinfo-dev || sudo apt install libtinfo-dev
+
+		# build
+		zig_clone_path=~/src/zig
+		mkdir -p $zig_clone_path/build
+		cd $zig_clone_path/build
+		cmake .. -DCMAKE_PREFIX_PATH="$(brew --prefix llvm);$(brew --prefix zstd)"
+		make install
+
+		# test
+		LD_LIBRARY_PATH=/home/linuxbrew/.linuxbrew/lib/ ~/src/zig/build/stage3/bin/zig --help > /dev/null
+		echo $?
+	)
+}
