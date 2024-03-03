@@ -1418,7 +1418,6 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
 
     local maybe_prompt_password = function(line)
       if string.match(line, "password.*:%s*$") or string.match(line, "Password.*:%s*$") then
-        print("SAW PASS")
         vim.defer_fn(function()
           local password = vim.fn.inputsecret(line)
           vim.fn.chansend(channel_id, password .. "\n")
@@ -1463,9 +1462,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       -- TODO: only replace until start of next command
       local current_line_number = vim.fn.line(".") - 1
       vim.api.nvim_buf_set_lines(buf, current_line_number, -1, true, {command, output_prefix .. ""})
-
       vim.fn.chansend(channel_id, command .. "\n")
-
       vim.api.nvim_command('stopinsert')
     end
 
