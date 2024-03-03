@@ -1387,6 +1387,8 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
     local output_prefix = "   "
     local buf = vim.api.nvim_get_current_buf()
     local channel_id = nil
+    local job_pid = nil
+    local child_pids = {}
     local pty = false
     local shell = "/usr/bin/bash" --os.getenv("SHELL") or "sh"
 
@@ -1394,10 +1396,11 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       if channel_id ~= nil then
         vim.fn.jobstop(channel_id)
         print("Stopped job")
+        job_pid = nil
       end
-      -- vim.api.nvim_command('stopinsert')
       -- send a <c-c>
-      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<c-c>', true, false, true), 'n', false)
+      -- vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<c-c>', true, false, true), 'n', false)
+      vim.api.nvim_command('stopinsert')
     end
 
     --vim.api.nvim_buf_set_option(buf, 'buftype', 'nofile') -- The buffer is not related to a file
@@ -1462,12 +1465,42 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       -- TODO: only replace until start of next command
       local current_line_number = vim.fn.line(".") - 1
       vim.api.nvim_buf_set_lines(buf, current_line_number, -1, true, {command, output_prefix .. ""})
+      vim.bo.modified = false
+
       vim.fn.chansend(channel_id, command .. "\n")
       vim.api.nvim_command('stopinsert')
     end
 
+    local display_child_process_commands = function()
+      if job_pid ~= nil then
+        local child_pids_lines = vim.fn.system(string.format("cat /proc/%s/task/%s/children", job_pid, job_pid))
+        child_pids = vim.fn.split(child_pids_lines)
+        local child_commands = {}
+        for i,pid in ipairs(child_pids) do
+          -- get the command line of the process
+          local cmdline = vim.fn.system(string.format("ps --no-headers -o args -p %s", pid))
+          cmdline = string.gsub(cmdline, "\n$", "")
+          child_commands[i] = cmdline
+        end
+        print("INFO Child cmds", vim.inspect(child_commands))
+      else
+        print("INFO No child")
+      end
+    end
+
+    local function trigger_child_process_monitor()
+      display_child_process_commands()
+
+      vim.defer_fn(function()
+        trigger_child_process_monitor()
+      end, 1000)
+    end
+
+
     local start_shell = function()
       channel_id = SinaStuff.execute_command_stream(pty, string.format("PS1= TERM=xterm %s --noediting --norc --noprofile", shell), function(event)
+        display_child_process_commands()
+
         if vim.api.nvim_buf_is_loaded(buf) == false then
           -- Buffer might have unloaded before exiting the editor.
           return
@@ -1504,6 +1537,10 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
 
         vim.bo.modified = false
       end)
+      job_pid = vim.fn.jobpid(channel_id)
+
+      display_child_process_commands()
+      -- trigger_child_process_monitor()
     end
 
     local stop_command = function()
