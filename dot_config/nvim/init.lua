@@ -1483,3 +1483,22 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
   end,
   group = vim.api.nvim_create_augroup('SinaDockerPs', { clear = true }),
 })
+
+vim.api.nvim_create_autocmd({"BufReadPost"}, {
+  pattern = "*.zig",
+  callback = function()
+    local buf = vim.api.nvim_get_current_buf()
+    local open_test_file = function()
+      -- Converts
+      -- ~/src/zig/ build/stage3/lib/zig/ std/net.zig
+      -- to
+      -- ~/src/zig/              lib/     std/net/test.zig
+      local filename = vim.api.nvim_buf_get_name(buf)
+      local test_filename = string.gsub(filename, "build/stage3/lib/zig/", "lib/")
+      test_filename = string.gsub(test_filename, ".zig$", "/test.zig")
+      vim.cmd.edit(test_filename)
+    end
+    vim.keymap.set('n', ';gt', open_test_file, { noremap = true, desc = "Sina: go to test file", buffer = buf })
+  end,
+  group = vim.api.nvim_create_augroup('SinaOpenZigTest', { clear = true }),
+})
