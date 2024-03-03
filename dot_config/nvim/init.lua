@@ -891,7 +891,7 @@ SinaStuff.execute_command_stream = function(pty, command, callback)
     -- Why 'cat'? ANSI escape codes are not rendered well in pty mode,
     -- so we disable them by piping through `cat`
     -- Why 'ssty -echo'? Because tty by defaut prints user input, which we don't want.
-    command = string.format("stty -echo; %s | cat; stty echo", command)
+    command = string.format("stty -echo; %s | cat", command)
     -- command = string.format("stty -echo; %s | sed 's/\\x1b\\[[0-9;]*m//g; s/\\x1b\\[[0-9;]*[A-Za-z]//g'; stty echo", command)
   end
 
@@ -901,7 +901,7 @@ SinaStuff.execute_command_stream = function(pty, command, callback)
     stdout_buffered = false,
     stderr_buffered = false,
     on_stdout = function(chan, data)
-      -- print("got", vim.inspect(data))
+      print("got", vim.inspect(data))
       callback({stdout = data, channel = chan})
     end,
     on_stderr = function(chan, data)
@@ -1467,6 +1467,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       vim.api.nvim_buf_set_lines(buf, current_line_number, -1, true, {command, output_prefix .. ""})
       vim.bo.modified = false
 
+      command = string.format('%s ; echo "(Command exited with code $?)"', command)
       vim.fn.chansend(channel_id, command .. "\n")
       vim.api.nvim_command('stopinsert')
     end
