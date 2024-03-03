@@ -1384,6 +1384,7 @@ end
 vim.api.nvim_create_autocmd({"BufReadCmd"}, {
   pattern = "nshell://*",
   callback = function()
+    local output_prefix = "   "
     local buf = vim.api.nvim_get_current_buf()
     local channel_id = nil
     local pty = false
@@ -1427,35 +1428,26 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
 
     local insert_output = function(bufnr, data)
       -- replace '\r' with '\n' at the end of each line
-      local output_prefix = "    "
-      print("insert_output", vim.inspect(data))
+      -- print("insert_output", vim.inspect(data))
       for i,line in ipairs(data) do
         -- local ansi_pattern = '\027%[[0-9;]*[a-zA-Z]'
         -- line = string.gsub(line, ansi_pattern, '\r')
-
-        data[i] = output_prefix .. string.gsub(line, "\r$", "")
+        if i > 1 then
+          -- The reason we don't add prefix to the first item,
+          -- is that the first item might be joined with the last line.
+          -- See channel.txt
+          data[i] = output_prefix .. string.gsub(line, "\r$", "")
+        else
+          data[i] = string.gsub(line, "\r$", "")
+        end
       end
 
-      local line_count = vim.api.nvim_buf_line_count(bufnr)
-      local first_line = ""
-      local insert_start = -2
-
-      if line_count == 0 then
-        return
-      end
-
-      if line_count == 1 then
-        -- first line is the prompt, we don't need to complete it
-        insert_start = 2
-        first_line = data[1]
-      else
-        local last_lines = vim.api.nvim_buf_get_lines(bufnr, -2, -1, false)
-        -- complete the previous line (see channel.txt)
-        first_line = last_lines[1] .. data[1]
-      end
+      local last_lines = vim.api.nvim_buf_get_lines(bufnr, -2, -1, false)
+      -- complete the previous line (see channel.txt)
+      local first_line = last_lines[1] .. data[1]
 
       -- append (last item may be a partial line, until EOF)
-      vim.api.nvim_buf_set_lines(bufnr, insert_start, -1, false, vim.list_extend(
+      vim.api.nvim_buf_set_lines(bufnr, -2, -1, false, vim.list_extend(
         {first_line},
         vim.list_slice(data, 2, #data)
       ))
@@ -1470,7 +1462,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
 
       -- TODO: only replace until start of next command
       local current_line_number = vim.fn.line(".") - 1
-      vim.api.nvim_buf_set_lines(buf, current_line_number, -1, true, {command, ""})
+      vim.api.nvim_buf_set_lines(buf, current_line_number, -1, true, {command, output_prefix .. ""})
 
       vim.fn.chansend(channel_id, command .. "\n")
 
