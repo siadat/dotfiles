@@ -1108,7 +1108,7 @@ end
 -- a function call in the current line into separate lines.
 -- It will do so for the first function call in the current line.
 -- For the nested ones you can run it again.
-local explode_lines = function(bufnr, filetype)
+local split_args_into_lines = function(bufnr, filetype)
   local debug = false
   if function_call_arguments_queries[filetype] == nil then
     return
@@ -1219,9 +1219,9 @@ local explode_lines = function(bufnr, filetype)
   end
 end
 
-vim.api.nvim_create_user_command("ExplodeList", function()
+vim.api.nvim_create_user_command("SplitArgs", function()
   local filetype = vim.bo.filetype
-  explode_lines(vim.api.nvim_get_current_buf(), filetype)
+  split_args_into_lines(vim.api.nvim_get_current_buf(), filetype)
 end, { nargs = 0 })
 
 SinaStuff.convert_seconds_to_age = function(seconds)
