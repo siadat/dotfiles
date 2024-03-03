@@ -892,6 +892,7 @@ SinaStuff.execute_command_stream = function(pty, command, callback)
     -- so we disable them by piping through `cat`
     -- Why 'ssty -echo'? Because tty by defaut prints user input, which we don't want.
     command = string.format("stty -echo; %s | cat; stty echo", command)
+    -- command = string.format("stty -echo; %s | sed 's/\\x1b\\[[0-9;]*m//g; s/\\x1b\\[[0-9;]*[A-Za-z]//g'; stty echo", command)
   end
 
   return vim.fn.jobstart(command, {
@@ -900,6 +901,7 @@ SinaStuff.execute_command_stream = function(pty, command, callback)
     stdout_buffered = false,
     stderr_buffered = false,
     on_stdout = function(chan, data)
+      -- print("got", vim.inspect(data))
       callback({stdout = data, channel = chan})
     end,
     on_stderr = function(chan, data)
@@ -1384,12 +1386,13 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
   callback = function()
     local buf = vim.api.nvim_get_current_buf()
     local channel_id = nil
-    local pty = true
+    local pty = false
     local shell = "/usr/bin/bash" --os.getenv("SHELL") or "sh"
 
     local stop_shell = function()
       if channel_id ~= nil then
         vim.fn.jobstop(channel_id)
+        print("Stopped job")
       end
       -- vim.api.nvim_command('stopinsert')
       -- send a <c-c>
@@ -1425,9 +1428,14 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
     local insert_output = function(bufnr, data)
       -- replace '\r' with '\n' at the end of each line
       local output_prefix = "    "
+      print("insert_output", vim.inspect(data))
       for i,line in ipairs(data) do
+        -- local ansi_pattern = '\027%[[0-9;]*[a-zA-Z]'
+        -- line = string.gsub(line, ansi_pattern, '\r')
+
         data[i] = output_prefix .. string.gsub(line, "\r$", "")
       end
+
       local line_count = vim.api.nvim_buf_line_count(bufnr)
       local first_line = ""
       local insert_start = -2
@@ -1486,6 +1494,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
             string.format("[Process exited with code %d]", event.code),
           }
           vim.api.nvim_buf_set_lines(buf, -1, -1, false, exit_lines)
+          vim.bo.modified = false
           return
         end
 
