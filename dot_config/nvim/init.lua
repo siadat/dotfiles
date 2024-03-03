@@ -635,7 +635,7 @@ local on_attach = function(_, bufnr)
   nmap('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
   nmap('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
   nmap('gI', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
-  nmap('<leader>D', require('telescope.builtin').lsp_type_definitions, 'Type [D]efinition')
+  nmap('gD', require('telescope.builtin').lsp_type_definitions, 'Type [D]efinition')
   nmap('<leader>ds', require('telescope.builtin').lsp_document_symbols, '[D]ocument [S]ymbols')
   nmap('<leader>ws', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[W]orkspace [S]ymbols')
 
@@ -644,7 +644,7 @@ local on_attach = function(_, bufnr)
   nmap('gG', vim.lsp.buf.signature_help, 'Signature Documentation')
 
   -- Lesser used LSP functionality
-  nmap('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
+  -- nmap('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
   nmap('<leader>wa', vim.lsp.buf.add_workspace_folder, '[W]orkspace [A]dd Folder')
   nmap('<leader>wr', vim.lsp.buf.remove_workspace_folder, '[W]orkspace [R]emove Folder')
   nmap('<leader>wl', function()
@@ -888,15 +888,17 @@ SinaStuff.execute_command_stream = function(pty, command, callback)
   -- That is why I pipe the output to something like `cat` as a workaround.
 
   if pty then
-    -- ANSI escape codes are not rendered well in pty mode,
+    -- Why 'cat'? ANSI escape codes are not rendered well in pty mode,
     -- so we disable them by piping through `cat`
-    command = string.format("%s | cat", command)
+    -- Why 'ssty -echo'? Because tty by defaut prints user input, which we don't want.
+    command = string.format("stty -echo; %s | cat; stty echo", command)
   end
 
   return vim.fn.jobstart(command, {
     pty = pty,
     detach = false,
     stdout_buffered = false,
+    stderr_buffered = false,
     on_stdout = function(chan, data)
       callback({stdout = data, channel = chan})
     end,
@@ -1420,16 +1422,13 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       end
     end
 
-    local insert_output = function(buf, data)
+    local insert_output = function(bufnr, data)
       -- replace '\r' with '\n' at the end of each line
       local output_prefix = "    "
       for i,line in ipairs(data) do
-        data[i] = string.gsub(line, "\r$", "")
-        if i > 1 then
-          data[i] = output_prefix .. data[i]
-        end
+        data[i] = output_prefix .. string.gsub(line, "\r$", "")
       end
-      local line_count = vim.api.nvim_buf_line_count(buf)
+      local line_count = vim.api.nvim_buf_line_count(bufnr)
       local first_line = ""
       local insert_start = -2
 
@@ -1442,13 +1441,13 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
         insert_start = 2
         first_line = data[1]
       else
-        local last_lines = vim.api.nvim_buf_get_lines(buf, -2, -1, false)
+        local last_lines = vim.api.nvim_buf_get_lines(bufnr, -2, -1, false)
         -- complete the previous line (see channel.txt)
         first_line = last_lines[1] .. data[1]
       end
 
       -- append (last item may be a partial line, until EOF)
-      vim.api.nvim_buf_set_lines(buf, insert_start, -1, false, vim.list_extend(
+      vim.api.nvim_buf_set_lines(bufnr, insert_start, -1, false, vim.list_extend(
         {first_line},
         vim.list_slice(data, 2, #data)
       ))
