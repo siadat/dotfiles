@@ -108,6 +108,12 @@ require('lazy').setup({
   'tpope/vim-fugitive',
   'tpope/vim-rhubarb',
   {
+    'stevearc/oil.nvim',
+    opts = {},
+    -- Optional dependencies
+    -- dependencies = { "nvim-tree/nvim-web-devicons" },
+  },
+  {
     'L3MON4D3/LuaSnip',
     config = function()
       -- Copied from https://github.com/L3MON4D3/LuaSnip/blob/a7a4b46/Examples/snippets.lua#L190
