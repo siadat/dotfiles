@@ -111,3 +111,7 @@ function monitor-tcp-port () {
 	    # -e tcp.flags \
 	    # -e tcp.ack \
 }
+
+function public-file-server () {
+	cd ~/public && timeout 1h python3 -m http.server
+}

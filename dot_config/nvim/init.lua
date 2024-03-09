@@ -117,9 +117,7 @@ require('lazy').setup({
         -- "size",
         -- "mtime",
       },
-      keymaps = {
-        ["v"] = "actions.select_vsplit", -- sina: it was ["<C-s>"]
-      },
+      keymaps = false, -- { ["v"] = "actions.select_vsplit", }, -- sina: it was ["<C-s>"]
     },
     -- Optional dependencies
     -- dependencies = { "nvim-tree/nvim-web-devicons" },
@@ -770,6 +768,7 @@ vim.wo.wrap = false
 vim.o.linebreak = true -- wrap at word boundaries, insead of in the middle of a word
 vim.o.wrapscan = false
 vim.o.inccommand = 'split'
+vim.wo.signcolumn = 'no'
 
 local SinaStuff = {}
 
