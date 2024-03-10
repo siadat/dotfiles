@@ -117,7 +117,7 @@ require('lazy').setup({
         -- "size",
         -- "mtime",
       },
-      keymaps = false, -- { ["v"] = "actions.select_vsplit", }, -- sina: it was ["<C-s>"]
+      { ["v"] = "actions.select_vsplit", }, -- sina: it was ["<C-s>"]
     },
     -- Optional dependencies
     -- dependencies = { "nvim-tree/nvim-web-devicons" },
