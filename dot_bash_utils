@@ -119,4 +119,5 @@ function public-file-server () {
 # print one byte (and its ascii representation) per line
 function hexdump-byte-by-byte () {
 	hexdump -v -e '1/1 "0x%02x "' -e '1/1 "%_p\n"' "$@"
+	# Suggestion: you could feed the output to `column` to see more of the output in one screen at one glance
 }
