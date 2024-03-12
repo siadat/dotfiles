@@ -7,6 +7,7 @@ export EDITOR=nvim
 alias v="${EDITOR} -O"
 alias view="${EDITOR} -R -O"
 alias date-slug='date +%F-%T'
+alias epoch='date +%s'
 alias grep='grep --color'
 alias abspath='readlink -f'
 
