@@ -107,21 +107,21 @@ require('lazy').setup({
   -- Git related plugins
   'tpope/vim-fugitive',
   'tpope/vim-rhubarb',
-  {
-    'stevearc/oil.nvim',
-    opts = {
-      -- copied from https://github.com/stevearc/oil.nvim/blob/18dfd24/README.md
-      columns = {
-        -- "icon", -- sina: icons don't render properly for me
-        -- "permissions",
-        -- "size",
-        -- "mtime",
-      },
-      { ["v"] = "actions.select_vsplit", }, -- sina: it was ["<C-s>"]
-    },
-    -- Optional dependencies
-    -- dependencies = { "nvim-tree/nvim-web-devicons" },
-  },
+  -- {
+  --   'stevearc/oil.nvim',
+  --   opts = {
+  --     -- copied from https://github.com/stevearc/oil.nvim/blob/18dfd24/README.md
+  --     columns = {
+  --       -- "icon", -- sina: icons don't render properly for me
+  --       -- "permissions",
+  --       -- "size",
+  --       -- "mtime",
+  --     },
+  --     { ["v"] = "actions.select_vsplit", }, -- sina: it was ["<C-s>"]
+  --   },
+  --   -- Optional dependencies
+  --   -- dependencies = { "nvim-tree/nvim-web-devicons" },
+  -- },
   {
     'L3MON4D3/LuaSnip',
     config = function()
