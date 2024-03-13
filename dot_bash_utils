@@ -115,11 +115,11 @@ function build_neovim() {
 		# ~/src/neovim/sina-build/bin/nvim /home/sina/src/advent-of-code-2023-zig/day1/test.lua +"luafile /home/sina/src/advent-of-code-2023-zig/day1/test.lua"
 
 		# with zig:
-		cat > /tmp/zig-shim <<'EOF'
+		cat <<-EOF > /tmp/zig-shim
 		#!/bin/bash
 		set -ex
 		# I got these flags by looking at the output of 'zig build-exe some_simple_program.c --library c --verbose-cc'
-		zig clang -isystem ~/src/zig/lib/include -isystem /usr/include -isystem /usr/include/x86_64-linux-gnu "${@}"
+		zig clang -isystem ~/src/zig/lib/include -isystem /usr/include -isystem /usr/include/x86_64-linux-gnu "\${@}"
 		EOF
 
 		make CC='/tmp/zig-shim' CMAKE_BUILD_TYPE=RelWithDebInfo
