@@ -165,6 +165,5 @@ function create_new_user_debian() {
 
 function commit() {
 	tempfile=$(mktemp --suffix .patch)
-	git diff --cached > $tempfile
-	EDITOR="nvim -O +vs\ ${tempfile} +wincmd\ h" git commit --all
+	EDITOR='nvim -O +"vs '$tempfile'" +"r!git diff --cached" +"set nomodified" +"wincmd h" ' git commit -a
 }
