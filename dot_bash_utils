@@ -20,7 +20,7 @@ alias gs='git status'
 
 # open results of rg in EDITOR
 function vrg() {
-  $EDITOR -O $(rg -l "$@")
+	$EDITOR -O $(rg -l "$@")
 }
 
 function capture () {
@@ -56,7 +56,7 @@ function dotfiles {
 		echo "chezmoi apply" && chezmoi apply
 		cd ~/.local/share/chezmoi/
 		git add -u
-		git --no-pager diff -w --exit-code --stat -p origin/main && return
+		git --no-pager diff --exit-code --stat -p origin/main && return
 		git status
 
 		if [ -n "$DEV" ]; then
@@ -174,6 +174,6 @@ function commit() {
 		tempfile=$(mktemp --suffix .patch)
 		# have an editor that opens cached diff in a vertical split
 		EDITOR='nvim -O +"vs '$tempfile'" +"r!git diff --cached" +"set nomodified" +"wincmd h" '
-		git commit --all
+		git commit -a
 	)
 }
