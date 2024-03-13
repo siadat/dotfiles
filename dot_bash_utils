@@ -86,6 +86,10 @@ function build_zig_from_source() {
 
 		# build
 		zig_clone_path=~/src/zig
+		if [ ! -d $zig_clone_path ]; then
+			git clone git@github.com:ziglang/zig.git $zig_clone_path
+		fi
+
 		mkdir -p $zig_clone_path/build
 		cd $zig_clone_path/build
 		time cmake .. -DCMAKE_PREFIX_PATH="$(brew --prefix llvm);$(brew --prefix zstd)"
@@ -94,6 +98,35 @@ function build_zig_from_source() {
 		# test
 		LD_LIBRARY_PATH=/home/linuxbrew/.linuxbrew/lib/ ~/src/zig/build/stage3/bin/zig --help > /dev/null
 		echo $?
+	)
+}
+
+function build_neovim() {
+	(
+		set -ex
+
+		cd ~/src/neovim/
+		# rm -rf build
+
+		# Without zig:
+		# set -e
+		# make CMAKE_BUILD_TYPE=RelWithDebInfo
+		# make CMAKE_INSTALL_PREFIX=~/src/neovim/sina-build install
+		# ~/src/neovim/sina-build/bin/nvim /home/sina/src/advent-of-code-2023-zig/day1/test.lua +"luafile /home/sina/src/advent-of-code-2023-zig/day1/test.lua"
+
+		# with zig:
+		cat > /tmp/zig-shim <<'EOF'
+		#!/bin/bash
+		set -ex
+		# I got these flags by looking at the output of 'zig build-exe some_simple_program.c --library c --verbose-cc'
+		zig clang -isystem ~/src/zig/lib/include -isystem /usr/include -isystem /usr/include/x86_64-linux-gnu "${@}"
+		EOF
+
+		make CC='/tmp/zig-shim' CMAKE_BUILD_TYPE=RelWithDebInfo
+		make CMAKE_INSTALL_PREFIX=~/src/neovim/sina-build install
+		echo "NeoVim is available as ~/src/neovim/sina-build/bin/nvim"
+		# ~/src/neovim/sina-build/bin/nvim /home/sina/src/neovim/test-files/test.lua +"luafile /home/sina/src/neovim/test-files/test.lua"
+		# ~/src/neovim/sina-build/bin/nvim --clean /home/sina/src/neovim/test-files/second-bug.lua +"luafile /home/sina/src/neovim/test-files/second-bug.lua"
 	)
 }
 
