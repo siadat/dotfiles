@@ -24,12 +24,14 @@ function vrg() {
 }
 
 function capture () {
-    local out;
-    out="$(mktemp --tmpdir=. --suffix=.txt)";
-    tmux capture-pane -J -S- -b mybuf;
-    tmux save-buffer -b mybuf "${out}";
-    echo "${out}";
-    nvim "${out}"
+	(
+		local out;
+		out="$(mktemp --tmpdir=. --suffix=.txt)";
+		tmux capture-pane -J -S- -b mybuf;
+		tmux save-buffer -b mybuf "${out}";
+		echo "${out}";
+		nvim "${out}"
+	)
 }
 
 function dotfiles {
@@ -131,19 +133,21 @@ function build_neovim() {
 }
 
 function monitor-tcp-port () {
-	local port="$1"
-	sudo tshark -i lo -Y "tcp.port == ${port}" -T fields -d tcp.port==${port},echo \
-	    -e frame.time \
-	    -e ip.src \
-	    -e tcp.srcport \
-	    -e ip.dst \
-	    -e tcp.dstport \
-	    -e tcp.len \
-	    -e tcp.seq \
-	    -e tcp.stream \
-	    -e echo.data
-	    # -e tcp.flags \
-	    # -e tcp.ack \
+	(
+		local port="$1"
+		sudo tshark -i lo -Y "tcp.port == ${port}" -T fields -d tcp.port==${port},echo \
+		    -e frame.time \
+		    -e ip.src \
+		    -e tcp.srcport \
+		    -e ip.dst \
+		    -e tcp.dstport \
+		    -e tcp.len \
+		    -e tcp.seq \
+		    -e tcp.stream \
+		    -e echo.data
+		    # -e tcp.flags \
+		    # -e tcp.ack \
+	)
 }
 
 function public-file-server () {
@@ -157,13 +161,19 @@ function hexdump-byte-by-byte () {
 }
 
 function create_new_user_debian() {
-	username=$1
-	useradd --create-home $username
-	usermod -aG sudo $username
-	passwd $username
+	(
+		username=$1
+		useradd --create-home $username
+		usermod -aG sudo $username
+		passwd $username
+	)
 }
 
 function commit() {
-	tempfile=$(mktemp --suffix .patch)
-	EDITOR='nvim -O +"vs '$tempfile'" +"r!git diff --cached" +"set nomodified" +"wincmd h" ' git commit -a
+	(
+		tempfile=$(mktemp --suffix .patch)
+		# have an editor that opens cached diff in a vertical split
+		EDITOR='nvim -O +"vs '$tempfile'" +"r!git diff --cached" +"set nomodified" +"wincmd h" '
+		git commit --all
+	)
 }
