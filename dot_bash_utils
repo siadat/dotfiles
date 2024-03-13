@@ -164,7 +164,6 @@ function create_new_user_debian() {
 }
 
 function commit() {
-	# make temporary file with an extension that shows that this is a git diff output
 	tempfile=$(mktemp --suffix .patch)
 	git diff --cached > $tempfile
 	EDITOR="nvim -O +vs\ ${tempfile} +wincmd\ h" git commit --all
