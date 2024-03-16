@@ -1603,15 +1603,21 @@ SinaStuff.Term = function(command, buf)
     end
 
     for i,line in ipairs(data) do
-      if i > 1 then
-        -- The reason we don't add prefix to the first item,
-        -- is that the first item might be joined with the last line.
-        -- See channel.txt
-        data[i] = output_prefix .. string.gsub(line, "\r$", "")
-      else
-        data[i] = string.gsub(line, "\r$", "")
-      end
+      -- when printing binary bytes, the stderr or stdout might include \n, which is not splitted by vim.
+      -- This might be a bug, but to be fair, nothing was printed for those strange bytes when the command was run in a terminal outside NeoVim.
+      data[i] = output_prefix .. string.gsub(line, "\n", "\\n")
     end
+
+    -- for i,line in ipairs(data) do
+    --   if i > 1 then
+    --     -- The reason we don't add prefix to the first item,
+    --     -- is that the first item might be joined with the last line.
+    --     -- See channel.txt
+    --     data[i] = output_prefix .. string.gsub(line, "\r$", "")
+    --   else
+    --     data[i] = string.gsub(line, "\r$", "")
+    --   end
+    -- end
 
     local last_lines = vim.api.nvim_buf_get_lines(bufnr, -2, -1, false)
     -- complete the previous line (see channel.txt)
