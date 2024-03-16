@@ -1622,6 +1622,13 @@ SinaStuff.Term = function(command, buf)
       {first_line},
       vim.list_slice(data, 2, #data)
     ))
+
+    vim.api.nvim_buf_set_option(bufnr, 'modified', false)
+
+    -- make sure the enndd of the buffer is visible:
+    vim.api.nvim_buf_call(bufnr, function()
+      vim.cmd('normal! G')
+    end)
   end
 
   return vim.fn.jobstart(command, {
@@ -1633,21 +1640,19 @@ SinaStuff.Term = function(command, buf)
     on_stdout = function(_, data)
       -- print("got stdout", vim.inspect(data))
       insert_output(buf, data)
-      vim.api.nvim_buf_set_option(buf, 'modified', false)
     end,
 
     on_stderr = function(_, data)
       -- print("got stderr", vim.inspect(data))
       insert_output(buf, data)
-      vim.api.nvim_buf_set_option(buf, 'modified', false)
+      -- scroll to the bottom:
     end,
 
     on_exit = function(_, code)
       local exit_lines = {
         string.format("[Process exited with code %d]", code),
       }
-      vim.api.nvim_buf_set_lines(buf, -1, -1, false, exit_lines)
-      vim.api.nvim_buf_set_option(buf, 'modified', false)
+      insert_output(buf, exit_lines)
     end
   })
 end
