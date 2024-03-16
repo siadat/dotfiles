@@ -1597,7 +1597,10 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
 SinaStuff.Term = function(command, buf)
   local output_prefix = ""
   local insert_output = function(bufnr, data)
-    -- TODO: check if bufnr still exists
+    -- check if bufnr still exists
+    if vim.api.nvim_buf_is_loaded(bufnr) == false then
+      return
+    end
 
     for i,line in ipairs(data) do
       if i > 1 then
