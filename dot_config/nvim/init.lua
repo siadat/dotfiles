@@ -1660,9 +1660,11 @@ vim.api.nvim_create_user_command("Term", function(opts)
   local buf = vim.api.nvim_create_buf(false, false)
   vim.cmd.buffer(buf)
 
-  -- local buf = vim.api.nvim_get_current_buf()
-  -- print(vim.inspect(opts))
-  local channel_id = SinaStuff.Term(string.format("bash -c %q", opts.fargs[1]), buf)
+  -- Sleep a little after the command, until https://github.com/neovim/neovim/issues/26543 is fixed
+  local command = string.format("%s ; EXIT_CODE=$? ; sleep 0.5s ; exit $EXIT_CODE", opts.fargs[1]) -- Useful if necessary: vim.fn.shellescape(opts.fargs[1])
+
+  -- local channel_id = SinaStuff.Term(string.format("bash -c %q", command), buf)
+  local channel_id = SinaStuff.Term(command, buf)
 
   -- vim.api.nvim_create_autocmd({"BufUnload"}, { -- also try 
   --   buffer = buf,
