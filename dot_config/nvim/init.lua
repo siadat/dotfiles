@@ -208,22 +208,22 @@ require('lazy').setup({
   'github/copilot.vim',
   -- NOTE: This is where your plugins related to LSP can be installed.
   --  The configuration is done below. Search for lspconfig to find it below.
-  ---- {
-  ----   -- LSP Configuration & Plugins
-  ----   'neovim/nvim-lspconfig',
-  ----   dependencies = {
-  ----     -- Automatically install LSPs to stdpath for neovim
-  ----     { 'williamboman/mason.nvim', config = true },
-  ----     'williamboman/mason-lspconfig.nvim',
+  {
+    -- LSP Configuration & Plugins
+    'neovim/nvim-lspconfig',
+    dependencies = {
+      -- Automatically install LSPs to stdpath for neovim
+      { 'williamboman/mason.nvim', config = true },
+      'williamboman/mason-lspconfig.nvim',
 
-  ----     -- Useful status updates for LSP
-  ----     -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
-  ----     { 'j-hui/fidget.nvim', opts = {} },
+      -- Useful status updates for LSP
+      -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
+      { 'j-hui/fidget.nvim', opts = {} },
 
-  ----     -- Additional lua configuration, makes nvim stuff amazing!
-  ----     'folke/neodev.nvim',
-  ----   },
-  ---- },
+      -- Additional lua configuration, makes nvim stuff amazing!
+      'folke/neodev.nvim',
+    },
+  },
 
   -- Useful plugin to show you pending keybinds.
   { 'folke/which-key.nvim', opts = {} },
@@ -686,10 +686,10 @@ require('which-key').register({
   ['<leader>h'] = { 'Git [H]unk' },
 }, { mode = 'v' })
 
----- -- mason-lspconfig requires that these setup functions are called in this order
----- -- before setting up the servers.
----- require('mason').setup()
----- require('mason-lspconfig').setup()
+-- mason-lspconfig requires that these setup functions are called in this order
+-- before setting up the servers.
+require('mason').setup()
+require('mason-lspconfig').setup()
 
 -- Enable the following language servers
 --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
@@ -719,24 +719,24 @@ local servers = {
 }
 
 -- Setup neovim lua configuration
----- require('neodev').setup()
+require('neodev').setup()
 
----- -- Ensure the servers above are installed
----- local mason_lspconfig = require 'mason-lspconfig'
----- 
----- mason_lspconfig.setup {
-----   ensure_installed = vim.tbl_keys(servers),
----- }
----- 
----- mason_lspconfig.setup_handlers {
-----   function(server_name)
-----     require('lspconfig')[server_name].setup {
-----       on_attach = on_attach,
-----       settings = servers[server_name],
-----       filetypes = (servers[server_name] or {}).filetypes,
-----     }
-----   end,
----- }
+-- Ensure the servers above are installed
+local mason_lspconfig = require 'mason-lspconfig'
+
+mason_lspconfig.setup {
+  ensure_installed = vim.tbl_keys(servers),
+}
+
+mason_lspconfig.setup_handlers {
+  function(server_name)
+    require('lspconfig')[server_name].setup {
+      on_attach = on_attach,
+      settings = servers[server_name],
+      filetypes = (servers[server_name] or {}).filetypes,
+    }
+  end,
+}
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
