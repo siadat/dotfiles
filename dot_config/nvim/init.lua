@@ -208,22 +208,22 @@ require('lazy').setup({
   'github/copilot.vim',
   -- NOTE: This is where your plugins related to LSP can be installed.
   --  The configuration is done below. Search for lspconfig to find it below.
-  {
-    -- LSP Configuration & Plugins
-    'neovim/nvim-lspconfig',
-    dependencies = {
-      -- Automatically install LSPs to stdpath for neovim
-      { 'williamboman/mason.nvim', config = true },
-      'williamboman/mason-lspconfig.nvim',
+  ---- {
+  ----   -- LSP Configuration & Plugins
+  ----   'neovim/nvim-lspconfig',
+  ----   dependencies = {
+  ----     -- Automatically install LSPs to stdpath for neovim
+  ----     { 'williamboman/mason.nvim', config = true },
+  ----     'williamboman/mason-lspconfig.nvim',
 
-      -- Useful status updates for LSP
-      -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
-      { 'j-hui/fidget.nvim', opts = {} },
+  ----     -- Useful status updates for LSP
+  ----     -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
+  ----     { 'j-hui/fidget.nvim', opts = {} },
 
-      -- Additional lua configuration, makes nvim stuff amazing!
-      'folke/neodev.nvim',
-    },
-  },
+  ----     -- Additional lua configuration, makes nvim stuff amazing!
+  ----     'folke/neodev.nvim',
+  ----   },
+  ---- },
 
   -- Useful plugin to show you pending keybinds.
   { 'folke/which-key.nvim', opts = {} },
@@ -690,10 +690,10 @@ require('which-key').register({
   ['<leader>h'] = { 'Git [H]unk' },
 }, { mode = 'v' })
 
--- mason-lspconfig requires that these setup functions are called in this order
--- before setting up the servers.
-require('mason').setup()
-require('mason-lspconfig').setup()
+---- -- mason-lspconfig requires that these setup functions are called in this order
+---- -- before setting up the servers.
+---- require('mason').setup()
+---- require('mason-lspconfig').setup()
 
 -- Enable the following language servers
 --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
@@ -723,24 +723,24 @@ local servers = {
 }
 
 -- Setup neovim lua configuration
-require('neodev').setup()
+---- require('neodev').setup()
 
--- Ensure the servers above are installed
-local mason_lspconfig = require 'mason-lspconfig'
-
-mason_lspconfig.setup {
-  ensure_installed = vim.tbl_keys(servers),
-}
-
-mason_lspconfig.setup_handlers {
-  function(server_name)
-    require('lspconfig')[server_name].setup {
-      on_attach = on_attach,
-      settings = servers[server_name],
-      filetypes = (servers[server_name] or {}).filetypes,
-    }
-  end,
-}
+---- -- Ensure the servers above are installed
+---- local mason_lspconfig = require 'mason-lspconfig'
+---- 
+---- mason_lspconfig.setup {
+----   ensure_installed = vim.tbl_keys(servers),
+---- }
+---- 
+---- mason_lspconfig.setup_handlers {
+----   function(server_name)
+----     require('lspconfig')[server_name].setup {
+----       on_attach = on_attach,
+----       settings = servers[server_name],
+----       filetypes = (servers[server_name] or {}).filetypes,
+----     }
+----   end,
+---- }
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
@@ -1183,6 +1183,7 @@ local split_args_into_lines = function(bufnr, filetype)
   local call_expr_nodes = {}
 
   local current_row = vim.fn.line(".") - 1
+  local current_col = vim.fn.col(".") - 1
   -- for id, node in query:iter_captures(root, bufnr, 0, -1) do
   for id, node, metadata in query:iter_captures(root, bufnr, current_row, current_row+1) do
     local range = { node:range() }
@@ -1191,7 +1192,7 @@ local split_args_into_lines = function(bufnr, filetype)
     local end_row = range[3]
     local end_col = range[4]
 
-    if current_row == start_row then
+    if current_row == start_row and current_col <= end_col then
       call_expr_nodes[#call_expr_nodes+1] = node
 
       if debug then
@@ -1362,6 +1363,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       vim.bo.modifiable = true
       vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
 
+      -- TODO: use vim.api.nvim_buf_set_option(buf, 'modified', false)
       vim.bo.modified = false
       vim.bo.modifiable = false
     end)
@@ -1481,7 +1483,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
       -- TODO: only replace until start of next command
       local current_line_number = vim.fn.line(".") - 1
       vim.api.nvim_buf_set_lines(buf, current_line_number, -1, true, {command, output_prefix .. ""})
-      vim.bo.modified = false
+      vim.api.nvim_buf_set_option(buf, 'modified', false)
 
       command = string.format('%s ; echo "(Command exited with code $?)"', command)
       vim.fn.chansend(channel_id, command .. "\n")
@@ -1533,7 +1535,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
             string.format("[Process exited with code %d]", event.code),
           }
           vim.api.nvim_buf_set_lines(buf, -1, -1, false, exit_lines)
-          vim.bo.modified = false
+          vim.api.nvim_buf_set_option(buf, 'modified', false)
           return
         end
 
@@ -1552,7 +1554,7 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
           end
         end
 
-        vim.bo.modified = false
+        vim.api.nvim_buf_set_option(buf, 'modified', false)
       end)
       job_pid = vim.fn.jobpid(channel_id)
 
@@ -1576,21 +1578,154 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
   group = vim.api.nvim_create_augroup('SinaDockerPs', { clear = true }),
 })
 
-vim.api.nvim_create_autocmd({"BufReadPost"}, {
-  pattern = "*.zig",
-  callback = function()
-    local buf = vim.api.nvim_get_current_buf()
-    local open_test_file = function()
-      -- Converts
-      -- ~/src/zig/ build/stage3/lib/zig/ std/net.zig
-      -- to
-      -- ~/src/zig/              lib/     std/net/test.zig
-      local filename = vim.api.nvim_buf_get_name(buf)
-      local test_filename = string.gsub(filename, "build/stage3/lib/zig/", "lib/")
-      test_filename = string.gsub(test_filename, ".zig$", "/test.zig")
-      vim.cmd.edit(test_filename)
+-- vim.api.nvim_create_autocmd({"BufReadPost"}, {
+--   pattern = "*.zig",
+--   callback = function()
+--     local buf = vim.api.nvim_get_current_buf()
+--     local open_test_file = function()
+--       -- Converts
+--       -- ~/src/zig/ build/stage3/lib/zig/ std/net.zig
+--       -- to
+--       -- ~/src/zig/              lib/     std/net/test.zig
+--       local filename = vim.api.nvim_buf_get_name(buf)
+--       local test_filename = string.gsub(filename, "build/stage3/lib/zig/", "lib/")
+--       test_filename = string.gsub(test_filename, ".zig$", "/test.zig")
+--       vim.cmd.edit(test_filename)
+--     end
+--     vim.keymap.set('n', ';gt', open_test_file, { noremap = true, desc = "Sina: go to test file", buffer = buf })
+--   end,
+--   group = vim.api.nvim_create_augroup('SinaOpenZigTest', { clear = true }),
+-- })
+
+SinaStuff.Term = function(command, buf)
+  local output_prefix = ""
+  local insert_output = function(bufnr, data)
+    -- TODO: check if bufnr still exists
+
+    for i,line in ipairs(data) do
+      if i > 1 then
+        -- The reason we don't add prefix to the first item,
+        -- is that the first item might be joined with the last line.
+        -- See channel.txt
+        data[i] = output_prefix .. string.gsub(line, "\r$", "")
+      else
+        data[i] = string.gsub(line, "\r$", "")
+      end
     end
-    vim.keymap.set('n', ';gt', open_test_file, { noremap = true, desc = "Sina: go to test file", buffer = buf })
-  end,
-  group = vim.api.nvim_create_augroup('SinaOpenZigTest', { clear = true }),
-})
+
+    local last_lines = vim.api.nvim_buf_get_lines(bufnr, -2, -1, false)
+    -- complete the previous line (see channel.txt)
+    local first_line = last_lines[1] .. data[1]
+
+    -- append (last item may be a partial line, until EOF)
+    vim.api.nvim_buf_set_lines(bufnr, -2, -1, false, vim.list_extend(
+      {first_line},
+      vim.list_slice(data, 2, #data)
+    ))
+  end
+
+  return vim.fn.jobstart(command, {
+    pty = false,
+    detach = false,
+    stdout_buffered = false,
+    stderr_buffered = false,
+
+    on_stdout = function(_, data)
+      -- print("got stdout", vim.inspect(data))
+      insert_output(buf, data)
+      vim.api.nvim_buf_set_option(buf, 'modified', false)
+    end,
+
+    on_stderr = function(_, data)
+      -- print("got stderr", vim.inspect(data))
+      insert_output(buf, data)
+      vim.api.nvim_buf_set_option(buf, 'modified', false)
+    end,
+
+    on_exit = function(_, code)
+      local exit_lines = {
+        string.format("[Process exited with code %d]", code),
+      }
+      vim.api.nvim_buf_set_lines(buf, -1, -1, false, exit_lines)
+      vim.api.nvim_buf_set_option(buf, 'modified', false)
+    end
+  })
+end
+vim.api.nvim_create_user_command("Term", function(opts)
+  local buf = vim.api.nvim_create_buf(false, false)
+  vim.cmd.buffer(buf)
+
+  -- local buf = vim.api.nvim_get_current_buf()
+  -- print(vim.inspect(opts))
+  local channel_id = SinaStuff.Term(string.format("bash -c %q", opts.fargs[1]), buf)
+
+  -- vim.api.nvim_create_autocmd({"BufUnload"}, { -- also try 
+  --   buffer = buf,
+  --   callback = function()
+  --     if channel_id ~= nil then
+  --       vim.fn.jobstop(channel_id)
+  --       channel_id = nil
+  --     end
+  --   end,
+  -- })
+end, { nargs = 1 })
+
+-- SinaStuff.Tail = function(command, buf)
+--   local output_prefix = ""
+--   local insert_output = function(bufnr, data)
+--     -- replace '\r' with '\n' at the end of each line
+--     -- print("insert_output", vim.inspect(data))
+--     for i,line in ipairs(data) do
+--       -- local ansi_pattern = '\027%[[0-9;]*[a-zA-Z]'
+--       -- line = string.gsub(line, ansi_pattern, '\r')
+--       if i > 1 then
+--         -- The reason we don't add prefix to the first item,
+--         -- is that the first item might be joined with the last line.
+--         -- See channel.txt
+--         data[i] = output_prefix .. string.gsub(line, "\r$", "")
+--       else
+--         data[i] = string.gsub(line, "\r$", "")
+--       end
+--     end
+--
+--     local last_lines = vim.api.nvim_buf_get_lines(bufnr, -2, -1, false)
+--     -- complete the previous line (see channel.txt)
+--     local first_line = last_lines[1] .. data[1]
+--
+--     -- append (last item may be a partial line, until EOF)
+--     vim.api.nvim_buf_set_lines(bufnr, -2, -1, false, vim.list_extend(
+--       {first_line},
+--       vim.list_slice(data, 2, #data)
+--     ))
+--   end
+--
+--   return vim.fn.jobstart(command, {
+--     pty = false,
+--     detach = false,
+--     stdout_buffered = false,
+--     stderr_buffered = false,
+--
+--     on_stdout = function(_, data)
+--       -- print("got", vim.inspect(data))
+--       insert_output(buf, data)
+--       vim.api.nvim_buf_set_option(buf, 'modified', false)
+--     end,
+--
+--     on_stderr = function(_, data)
+--       insert_output(buf, data)
+--       vim.api.nvim_buf_set_option(buf, 'modified', false)
+--     end,
+--
+--     on_exit = function(_, code)
+--       local exit_lines = {
+--         string.format("[Process exited with code %d]", code),
+--       }
+--       vim.api.nvim_buf_set_lines(buf, -1, -1, false, exit_lines)
+--       vim.api.nvim_buf_set_option(buf, 'modified', false)
+--     end
+--   })
+-- end
+-- vim.api.nvim_create_user_command("Tail", function(opts)
+--   local buf = vim.api.nvim_get_current_buf()
+--   SinaStuff.Tail(string.format("tail -F %s", opts.fargs[1]), buf)
+-- end, { nargs = 1 })
