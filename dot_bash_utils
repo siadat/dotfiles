@@ -67,7 +67,7 @@ function dotfiles {
 		tempfile=$(mktemp --suffix .patch)
 		# have an editor that opens cached diff in a vertical split
 		EDITOR='nvim -O +"vs '$tempfile'" +"r!git diff --stat --cached -p" +"set nomodified" +"normal gg" +"wincmd h"'
-		if git commit -a; then
+		if git commit --edit -m 'update' -a; then
 			git push origin HEAD
 		        git push origin HEAD
 		else
