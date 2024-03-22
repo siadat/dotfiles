@@ -11,7 +11,7 @@ alias epoch='date +%s'
 alias grep='grep --color'
 alias abspath='readlink -f'
 
-alias p='git pull origin HEAD'
+alias pull='git pull origin HEAD'
 alias push='git push origin HEAD'
 alias gd='git diff --stat -p -w' # -U0
 alias gdc='git diff --stat -p -w --cached' # -U0
@@ -56,24 +56,23 @@ function dotfiles {
 		echo "chezmoi apply" && chezmoi apply
 		cd ~/.local/share/chezmoi/
 		git add -u
-		git --no-pager diff --exit-code --stat -p origin/main && return
 		git status
 
 		if [ -n "$DEV" ]; then
 			echo "Changes not pushed to remote"
 			return
 		fi
-		read -r -p "Commit and push? [y/N] " response
 
-		case "$response" in
-			y)
-				git commit -m "chezmoi: update"
-				git push origin HEAD
-				;;
-			*)
-				echo "Aborted"
-				;;
-		esac
+
+		tempfile=$(mktemp --suffix .patch)
+		# have an editor that opens cached diff in a vertical split
+		EDITOR='nvim -O +"vs '$tempfile'" +"r!git diff --stat --cached -p" +"set nomodified" +"normal gg" +"wincmd h"'
+		if git commit -a; then
+			git push origin HEAD
+		        git push origin HEAD
+		else
+			echo "Aborted"
+		fi
 	)
 }
 

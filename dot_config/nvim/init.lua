@@ -72,36 +72,40 @@ local python_diagnostic_plugin = {}
 
 if vim.fn.hostname() == "personalbox" then
   python_diagnostic_plugin = {
-      "siadat/python-diagnostic.nvim",
-      dev = true,
-      config = function()
-        require('python-diagnostic').setup({
-          command = "poetry run pytest --tb native",
-        })
-        vim.api.nvim_create_autocmd({"BufReadPost"}, {
-          pattern = "*.py",
-          command = "PythonTestOnSave",
-        })
-      end,
-    }
+    "siadat/python-diagnostic.nvim",
+    dev = true,
+    config = function()
+      require('python-diagnostic').setup({
+        command = "poetry run pytest --tb native",
+      })
+      vim.api.nvim_create_autocmd({"BufReadPost"}, {
+        pattern = "*.py",
+        command = "PythonTestOnSave",
+      })
+    end,
+  }
 else
   python_diagnostic_plugin = {
-      "siadat/python-diagnostic.nvim",
-      dev = true,
-      config = function()
-        require('python-diagnostic').setup({
-          command = "bash run-tests.bash",
-        })
-        vim.api.nvim_create_autocmd({"BufReadPost"}, {
-          pattern = "*.py",
-          command = "PythonTestOnSave",
-        })
-      end,
-    }
+    "siadat/python-diagnostic.nvim",
+    dev = true,
+    config = function()
+      require('python-diagnostic').setup({
+        command = "bash run-tests.bash",
+      })
+      vim.api.nvim_create_autocmd({"BufReadPost"}, {
+        pattern = "*.py",
+        command = "PythonTestOnSave",
+      })
+    end,
+  }
 end
 
 require('lazy').setup({
   python_diagnostic_plugin,
+  {
+    "siadat/shell.nvim",
+    opts = {},
+  },
   -- NOTE: First, some plugins that don't require any configuration
 
   -- Git related plugins
@@ -1592,152 +1596,3 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
 --   end,
 --   group = vim.api.nvim_create_augroup('SinaOpenZigTest', { clear = true }),
 -- })
-
-SinaStuff.Term = function(command, buf)
-  local output_prefix = ""
-  local insert_output = function(bufnr, data)
-    -- check if bufnr still exists
-    if vim.api.nvim_buf_is_loaded(bufnr) == false then
-      return
-    end
-
-    for i,line in ipairs(data) do
-      -- when printing binary bytes, the stderr or stdout might include \n, which is not splitted by vim.
-      -- This might be a bug, but to be fair, nothing was printed for those strange bytes when the command was run in a terminal outside NeoVim.
-      data[i] = output_prefix .. string.gsub(line, "\n", "\\n")
-    end
-
-    -- for i,line in ipairs(data) do
-    --   if i > 1 then
-    --     -- The reason we don't add prefix to the first item,
-    --     -- is that the first item might be joined with the last line.
-    --     -- See channel.txt
-    --     data[i] = output_prefix .. string.gsub(line, "\r$", "")
-    --   else
-    --     data[i] = string.gsub(line, "\r$", "")
-    --   end
-    -- end
-
-    local last_lines = vim.api.nvim_buf_get_lines(bufnr, -2, -1, false)
-    -- complete the previous line (see channel.txt)
-    local first_line = last_lines[1] .. data[1]
-
-    -- append (last item may be a partial line, until EOF)
-    vim.api.nvim_buf_set_lines(bufnr, -2, -1, false, vim.list_extend(
-      {first_line},
-      vim.list_slice(data, 2, #data)
-    ))
-
-    vim.api.nvim_buf_set_option(bufnr, 'modified', false)
-
-    -- make sure the enndd of the buffer is visible:
-    vim.api.nvim_buf_call(bufnr, function()
-      vim.cmd('normal! G')
-    end)
-  end
-
-  return vim.fn.jobstart(command, {
-    pty = false,
-    detach = false,
-    stdout_buffered = false,
-    stderr_buffered = false,
-
-    on_stdout = function(_, data)
-      -- print("got stdout", vim.inspect(data))
-      insert_output(buf, data)
-    end,
-
-    on_stderr = function(_, data)
-      -- print("got stderr", vim.inspect(data))
-      insert_output(buf, data)
-      -- scroll to the bottom:
-    end,
-
-    on_exit = function(_, code)
-      local exit_lines = {
-        string.format("[Process exited with code %d]", code),
-      }
-      insert_output(buf, exit_lines)
-    end
-  })
-end
-vim.api.nvim_create_user_command("Term", function(opts)
-  local buf = vim.api.nvim_create_buf(false, false)
-  vim.cmd.buffer(buf)
-
-  -- Sleep a little after the command, until https://github.com/neovim/neovim/issues/26543 is fixed
-  local command = string.format("%s ; EXIT_CODE=$? ; sleep 0.5s ; exit $EXIT_CODE", opts.fargs[1]) -- Useful if necessary: vim.fn.shellescape(opts.fargs[1])
-
-  -- local channel_id = SinaStuff.Term(string.format("bash -c %q", command), buf)
-  local channel_id = SinaStuff.Term(command, buf)
-
-  -- vim.api.nvim_create_autocmd({"BufUnload"}, { -- also try 
-  --   buffer = buf,
-  --   callback = function()
-  --     if channel_id ~= nil then
-  --       vim.fn.jobstop(channel_id)
-  --       channel_id = nil
-  --     end
-  --   end,
-  -- })
-end, { nargs = 1 })
-
--- SinaStuff.Tail = function(command, buf)
---   local output_prefix = ""
---   local insert_output = function(bufnr, data)
---     -- replace '\r' with '\n' at the end of each line
---     -- print("insert_output", vim.inspect(data))
---     for i,line in ipairs(data) do
---       -- local ansi_pattern = '\027%[[0-9;]*[a-zA-Z]'
---       -- line = string.gsub(line, ansi_pattern, '\r')
---       if i > 1 then
---         -- The reason we don't add prefix to the first item,
---         -- is that the first item might be joined with the last line.
---         -- See channel.txt
---         data[i] = output_prefix .. string.gsub(line, "\r$", "")
---       else
---         data[i] = string.gsub(line, "\r$", "")
---       end
---     end
---
---     local last_lines = vim.api.nvim_buf_get_lines(bufnr, -2, -1, false)
---     -- complete the previous line (see channel.txt)
---     local first_line = last_lines[1] .. data[1]
---
---     -- append (last item may be a partial line, until EOF)
---     vim.api.nvim_buf_set_lines(bufnr, -2, -1, false, vim.list_extend(
---       {first_line},
---       vim.list_slice(data, 2, #data)
---     ))
---   end
---
---   return vim.fn.jobstart(command, {
---     pty = false,
---     detach = false,
---     stdout_buffered = false,
---     stderr_buffered = false,
---
---     on_stdout = function(_, data)
---       -- print("got", vim.inspect(data))
---       insert_output(buf, data)
---       vim.api.nvim_buf_set_option(buf, 'modified', false)
---     end,
---
---     on_stderr = function(_, data)
---       insert_output(buf, data)
---       vim.api.nvim_buf_set_option(buf, 'modified', false)
---     end,
---
---     on_exit = function(_, code)
---       local exit_lines = {
---         string.format("[Process exited with code %d]", code),
---       }
---       vim.api.nvim_buf_set_lines(buf, -1, -1, false, exit_lines)
---       vim.api.nvim_buf_set_option(buf, 'modified', false)
---     end
---   })
--- end
--- vim.api.nvim_create_user_command("Tail", function(opts)
---   local buf = vim.api.nvim_get_current_buf()
---   SinaStuff.Tail(string.format("tail -F %s", opts.fargs[1]), buf)
--- end, { nargs = 1 })
