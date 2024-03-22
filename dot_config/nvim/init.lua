@@ -1578,6 +1578,41 @@ vim.api.nvim_create_autocmd({"BufReadCmd"}, {
   group = vim.api.nvim_create_augroup('SinaDockerPs', { clear = true }),
 })
 
+SinaStuff.animate_width = function(win, keyframes, current)
+  vim.defer_fn(function()
+    vim.api.nvim_win_set_width(win, keyframes[current])
+    if current == #keyframes then
+      return
+    end
+    SinaStuff.animate_width(win, keyframes, current + 1)
+  end, 16)
+end
+
+vim.api.nvim_create_user_command("AnimateWideWidth", function()
+  local total_columns = vim.o.columns
+  local width = vim.fn.winwidth(0)
+  local keyframes = {}
+  for i = 1, 10 do
+    -- do a smooth animation
+    keyframes[i] = math.floor(width + (total_columns - width) * (1 - math.cos(i / 10 * math.pi / 2)))
+  end
+  SinaStuff.animate_width(0, keyframes, 1)
+end, { nargs = 0 })
+
+vim.api.nvim_create_user_command("AnimateEqualWidths", function()
+  local total_columns = vim.o.columns
+
+  for _,win in ipairs(vim.api.nvim_list_wins()) do
+    local width = vim.fn.winwidth(win)
+    local keyframes = {}
+    for i = 1, 10 do
+      -- do a smooth animation to make each window width equal to total_columns/(number of windows)
+      keyframes[i] = math.floor(width + (total_columns / #vim.api.nvim_list_wins() - width) * (1 - math.cos(i / 10 * math.pi / 2)))
+    end
+    SinaStuff.animate_width(win, keyframes, 1)
+  end
+end, { nargs = 0 })
+
 -- vim.api.nvim_create_autocmd({"BufReadPost"}, {
 --   pattern = "*.zig",
 --   callback = function()
