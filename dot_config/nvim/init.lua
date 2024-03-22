@@ -1588,30 +1588,31 @@ SinaStuff.animate_width = function(win, keyframes, current)
   end, 16)
 end
 
-vim.api.nvim_create_user_command("AnimateWideWidth", function()
+SinaStuff.animated_resize = function(direction)
   local total_columns = vim.o.columns
-  local width = vim.fn.winwidth(0)
-  local keyframes = {}
-  for i = 1, 10 do
-    -- do a smooth animation
-    keyframes[i] = math.floor(width + (total_columns - width) * (1 - math.cos(i / 10 * math.pi / 2)))
-  end
-  SinaStuff.animate_width(0, keyframes, 1)
-end, { nargs = 0 })
-
-vim.api.nvim_create_user_command("AnimateEqualWidths", function()
-  local total_columns = vim.o.columns
-
-  for _,win in ipairs(vim.api.nvim_list_wins()) do
-    local width = vim.fn.winwidth(win)
+  if direction == "maximize" then
+    local width = vim.fn.winwidth(0)
     local keyframes = {}
     for i = 1, 10 do
-      -- do a smooth animation to make each window width equal to total_columns/(number of windows)
-      keyframes[i] = math.floor(width + (total_columns / #vim.api.nvim_list_wins() - width) * (1 - math.cos(i / 10 * math.pi / 2)))
+      -- do a smooth animation
+      keyframes[i] = math.floor(width + (total_columns - width) * (1 - math.cos(i / 10 * math.pi / 2)))
     end
-    SinaStuff.animate_width(win, keyframes, 1)
+    SinaStuff.animate_width(0, keyframes, 1)
+  elseif direction == "equal" then
+    for _,win in ipairs(vim.api.nvim_list_wins()) do
+      local width = vim.fn.winwidth(win)
+      local keyframes = {}
+      for i = 1, 10 do
+        -- do a smooth animation to make each window width equal to total_columns/(number of windows)
+        keyframes[i] = math.floor(width + (total_columns / #vim.api.nvim_list_wins() - width) * (1 - math.cos(i / 10 * math.pi / 2)))
+      end
+      SinaStuff.animate_width(win, keyframes, 1)
+    end
   end
-end, { nargs = 0 })
+end
+
+vim.keymap.set('n', '<c-w>|', function() SinaStuff.animated_resize("maximize") end, { noremap = true, desc = "Sina: maximize current window width" })
+vim.keymap.set('n', '<c-w>=', function() SinaStuff.animated_resize("equal") end, { noremap = true, desc = "Sina: equal all window widths" })
 
 -- vim.api.nvim_create_autocmd({"BufReadPost"}, {
 --   pattern = "*.zig",
