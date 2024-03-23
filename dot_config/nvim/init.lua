@@ -44,7 +44,6 @@ P.S. You can delete this when you're done too. It's your config now :)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
-
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    https://github.com/folke/lazy.nvim
 --    `:help lazy.nvim.txt` for more info
@@ -105,6 +104,7 @@ require('lazy').setup({
   {
     "siadat/shell.nvim",
     opts = {},
+    dev = true,
   },
   -- NOTE: First, some plugins that don't require any configuration
 
@@ -352,8 +352,8 @@ require('lazy').setup({
       sections = {
         lualine_a = {'filename'},
         lualine_b = {'mode'},
-        lualine_c = {'branch', 'diff', 'diagnostics'},
-        lualine_x = {'filetype'},
+        lualine_c = {'branch', 'diff', 'diagnostics', function() return vim.fn.expand('%') end},
+        lualine_x = { vim.loop.cwd },
         lualine_y = {'progress'},
         lualine_z = {'location'}
       },
@@ -616,6 +616,7 @@ local function telescope_live_grep_open_files()
     prompt_title = 'Live Grep in Open Files',
   }
 end
+
 vim.keymap.set('n', '<leader>s/', telescope_live_grep_open_files, { desc = '[S]earch [/] in Open Files' })
 vim.keymap.set('n', '<leader>ss', require('telescope.builtin').builtin, { desc = '[S]earch [S]elect Telescope' })
 vim.keymap.set('n', '<leader>gf', require('telescope.builtin').git_files, { desc = 'Search [G]it [F]iles' })
@@ -626,6 +627,7 @@ vim.keymap.set('n', '<leader>sg', require('telescope.builtin').live_grep, { desc
 vim.keymap.set('n', '<leader>sG', ':LiveGrepGitRoot<cr>', { desc = '[S]earch by [G]rep on Git Root' })
 vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' })
 vim.keymap.set('n', '<leader>sr', require('telescope.builtin').resume, { desc = '[S]earch [R]esume' })
+vim.keymap.set('n', '<leader>sc', require('shell').telescope_history_search(), { desc = '[S]earch [C]ommands' })
 
 -- [[ Configure LSP ]]
 --  This function gets run when an LSP connects to a particular buffer.
@@ -1023,7 +1025,7 @@ vim.keymap.set('n', ';v', function()
   local files = SinaStuff.get_chezmoi_sources()
   local items = {}
   for _,v in ipairs(files) do
-    local command = string.format("tabnew %s", v)
+    local command = string.format("tabnew %s | tcd ~/.local/share/chezmoi/", v)
     local display = string.gsub(v, "^.*/.local/share/chezmoi/", "")
     table.insert(items, {display, command})
   end
