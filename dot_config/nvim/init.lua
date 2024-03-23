@@ -1004,7 +1004,7 @@ SinaStuff.telescope_wrapper = function(opts)
     end
 
     pickers.new(opts.telescope_opts, {
-      prompt_title = "Pick a command",
+      prompt_title = opts.prompt,
       finder = finders.new_table {
         results = opts.items,
         entry_maker = function(entry)
@@ -1030,6 +1030,7 @@ vim.keymap.set('n', ';v', function()
     table.insert(items, {display, command})
   end
   SinaStuff.telescope_wrapper({
+    prompt = "Pick a file",
     telescope_opts = require("telescope.themes").get_dropdown{},
     items = items,
   })
@@ -1038,6 +1039,7 @@ end, { desc = 'Sina: open dotfiles with Telescope' })
 vim.keymap.set('n', ';f', function()
   local items = SinaStuff.get_commandsfile()
   SinaStuff.telescope_wrapper({
+    prompt = "Pick a command",
     items = items,
   })
 end, { desc = 'Sina: open common files with Telescope' })
