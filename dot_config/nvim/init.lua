@@ -1120,6 +1120,7 @@ SinaStuff.run_command_in_current_line = function()
 end
 -- vim.keymap.set('n', ';:', SinaStuff.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
 
+-- use <c-t>n to go to the next tab, similar to <c-w>w
 vim.keymap.set('n', '<c-t>p', function() vim.cmd('tabprevious') end, { noremap = true, desc = "Sina: prev tab" })
 vim.keymap.set('n', '<c-t>n', function() vim.cmd('tabnext') end, { noremap = true, desc = "Sina: next tab" })
 
