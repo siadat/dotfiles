@@ -1040,6 +1040,7 @@ vim.keymap.set('n', ';f', function()
   local items = SinaStuff.get_commandsfile()
   SinaStuff.telescope_wrapper({
     prompt = "Pick a command",
+    telescope_opts = require("telescope.themes").get_dropdown{},
     items = items,
   })
 end, { desc = 'Sina: open common files with Telescope' })
