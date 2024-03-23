@@ -1120,8 +1120,9 @@ SinaStuff.run_command_in_current_line = function()
 end
 -- vim.keymap.set('n', ';:', SinaStuff.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
 
-vim.keymap.set('n', ';tp', function() vim.cmd('tabprevious') end, { noremap = true, desc = "Sina: prev tab" })
-vim.keymap.set('n', ';tn', function() vim.cmd('tabnext') end, { noremap = true, desc = "Sina: next tab" })
+vim.keymap.set('n', '<c-t>p', function() vim.cmd('tabprevious') end, { noremap = true, desc = "Sina: prev tab" })
+vim.keymap.set('n', '<c-t>n', function() vim.cmd('tabnext') end, { noremap = true, desc = "Sina: next tab" })
+
 vim.keymap.set('n', ';ts', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
 vim.keymap.set('n', ';tq', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
 -- vim.keymap.set('n', ';t', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
