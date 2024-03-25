@@ -102,9 +102,13 @@ end
 require('lazy').setup({
   python_diagnostic_plugin,
   {
-    "siadat/shell.nvim",
-    opts = {},
+    "shellpad/shellpad.nvim",
     dev = true,
+    dependencies = { "nvim-telescope/telescope.nvim" },
+    config = function(opts)
+      require('shellpad').setup(opts)
+      vim.keymap.set('n', '<leader>sc', require('shellpad').telescope_history_search(), { desc = '[S]earch [C]ommands' })
+    end,
   },
   {
     "siadat/animated-resize.nvim",
@@ -632,7 +636,6 @@ vim.keymap.set('n', '<leader>sg', require('telescope.builtin').live_grep, { desc
 vim.keymap.set('n', '<leader>sG', ':LiveGrepGitRoot<cr>', { desc = '[S]earch by [G]rep on Git Root' })
 vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' })
 vim.keymap.set('n', '<leader>sr', require('telescope.builtin').resume, { desc = '[S]earch [R]esume' })
-vim.keymap.set('n', '<leader>sc', require('shell').telescope_history_search(), { desc = '[S]earch [C]ommands' })
 
 -- [[ Configure LSP ]]
 --  This function gets run when an LSP connects to a particular buffer.
@@ -752,9 +755,9 @@ mason_lspconfig.setup_handlers {
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
 
-vim.keymap.set('n', '<c-f>', '<esc>', { desc = 'sina: escape' })
-vim.keymap.set('i', '<c-f>', '<esc>', { desc = 'sina: escape' })
-vim.keymap.set('v', '<c-f>', '<esc>', { desc = 'sina: escape' })
+vim.keymap.set('n', '<c-f>', '<esc>', { desc = 'Sina: escape' })
+vim.keymap.set('i', '<c-f>', '<esc>', { desc = 'Sina: escape' })
+vim.keymap.set('v', '<c-f>', '<esc>', { desc = 'Sina: escape' })
 vim.keymap.set('c', '<c-f>', '<esc>', { desc = 'Sina: escape' })
 vim.keymap.set('t', '<c-f>', '<esc>', { desc = 'Sina: escape' })
 vim.keymap.set('s', '<c-f>', '<esc>', { desc = 'Sina: escape' })
@@ -766,6 +769,7 @@ vim.keymap.set('n', ';w', ':up<cr>', { desc = 'Sina: write/update buffer' })
 vim.keymap.set('n', ';q', ':q<cr>', { desc = 'Sina: close window' })
 vim.keymap.set('n', ';:', 'q:', { desc = 'Sina: open Normal mode command window' })
 vim.keymap.set('n', '<c-p>', require('telescope.builtin').find_files, { desc = 'Sina: search files' })
+vim.keymap.set('c', '<c-a>', '<c-b>', { desc = 'Sina: go to beginning of the line' })
 vim.o.hlsearch = true
 vim.o.splitright = true
 vim.o.equalalways = true
@@ -801,7 +805,11 @@ end
 -- tabnew | term man --pager=cat git-add | set ft=man
 SinaStuff.Man = function(opts)
   vim.cmd.tabnew()
-  vim.cmd(string.format("term man --pager=cat %q", opts.fargs[1]))
+
+  -- To support the number 2 as in `:Man 2 write`, I will pass everything
+  -- given to the man command, without quoting (ie %s instead of %q)
+  vim.cmd(string.format("term man --pager=cat %s", opts.fargs[1]))
+
   vim.cmd("set ft=man")
 end
 vim.api.nvim_create_user_command("Man", SinaStuff.Man, { nargs = 1 })
@@ -820,6 +828,16 @@ vim.api.nvim_create_autocmd('BufReadPost', {
 
     if valid_line and not_commit then
       vim.cmd([[normal! g`"]])
+    end
+  end,
+})
+
+vim.api.nvim_create_autocmd('DirChanged', {
+  pattern = "*",
+  callback = function(args)
+    if args.match == "global" then
+      vim.api.nvim_err_writeln("Please don't change the global cwd. Use `:tcd` or other cd alternatives")
+      vim.cmd.cd("-")
     end
   end,
 })
