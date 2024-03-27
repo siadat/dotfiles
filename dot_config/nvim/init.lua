@@ -67,54 +67,35 @@ vim.opt.rtp:prepend(lazypath)
 --  You can also configure plugins after the setup call,
 --    as they will be available in your neovim runtime.
 
-local python_diagnostic_plugin = {}
-
-if vim.fn.hostname() == "personalbox" then
-  python_diagnostic_plugin = {
-    "siadat/python-diagnostic.nvim",
-    dev = true,
-    config = function()
-      require('python-diagnostic').setup({
-        command = "poetry run pytest --tb native",
-      })
-      vim.api.nvim_create_autocmd({"BufReadPost"}, {
-        pattern = "*.py",
-        command = "PythonTestOnSave",
-      })
-    end,
-  }
-else
-  python_diagnostic_plugin = {
-    "siadat/python-diagnostic.nvim",
-    dev = true,
-    config = function()
-      require('python-diagnostic').setup({
-        command = "bash run-tests.bash",
-      })
-      vim.api.nvim_create_autocmd({"BufReadPost"}, {
-        pattern = "*.py",
-        command = "PythonTestOnSave",
-      })
-    end,
-  }
-end
+local python_diagnostic_plugin = {
+  "siadat/python-diagnostic.nvim",
+  dev = vim.fn.hostname() == "personalbox",
+  config = function()
+    require('python-diagnostic').setup({
+      command = "poetry run pytest --tb native",
+    })
+    vim.api.nvim_create_autocmd({"BufReadPost"}, {
+      pattern = "*.py",
+      command = "PythonTestOnSave",
+    })
+  end,
+}
 
 require('lazy').setup({
-  python_diagnostic_plugin,
   {
     "shellpad/shellpad.nvim",
-    dev = true,
+    dev = vim.fn.hostname() == "personalbox",
     dependencies = { "nvim-telescope/telescope.nvim" },
     config = function(opts)
       require('shellpad').setup(opts)
       vim.keymap.set('n', '<leader>sc', require('shellpad').telescope_history_search(), { desc = '[S]earch [C]ommands' })
     end,
   },
-  {
-    "siadat/animated-resize.nvim",
-    opts = {},
-    dev = true,
-  },
+  -- {
+  --   "siadat/animated-resize.nvim",
+  --   opts = {},
+  --   dev = true,
+  -- },
   -- NOTE: First, some plugins that don't require any configuration
 
   -- Git related plugins
