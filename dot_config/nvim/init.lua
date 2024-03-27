@@ -813,15 +813,15 @@ vim.api.nvim_create_autocmd('BufReadPost', {
   end,
 })
 
-vim.api.nvim_create_autocmd('DirChanged', {
-  pattern = "*",
-  callback = function(args)
-    if args.match == "global" then
-      vim.api.nvim_err_writeln("Please don't change the global cwd. Use `:tcd` or other cd alternatives")
-      vim.cmd.cd("-")
-    end
-  end,
-})
+-- vim.api.nvim_create_autocmd('DirChanged', {
+--   pattern = "*",
+--   callback = function(args)
+--     if args.match == "global" then
+--       vim.api.nvim_err_writeln("Please don't change the global cwd. Use `:tcd` or other cd alternatives")
+--       vim.cmd.cd("-")
+--     end
+--   end,
+-- })
 
 SinaStuff.get_chezmoi_sources = function()
   return vim.fn.systemlist("chezmoi managed -i files -p source-absolute", "", 0)
