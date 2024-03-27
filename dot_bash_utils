@@ -71,8 +71,6 @@ function dotfiles {
 		if git commit --edit -m 'update' -a; then
 			git push origin HEAD
 		        git push origin HEAD
-		else
-			echo "Aborted"
 		fi
 	)
 }
