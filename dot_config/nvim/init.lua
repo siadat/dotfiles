@@ -835,15 +835,18 @@ SinaStuff.show_or_update_diff_win = function()
     local current_win = vim.api.nvim_get_current_win()
     local wins = vim.api.nvim_tabpage_list_wins(0)
 
-    local command = "term git --no-pager diff --exit-code --stat -p"
+    local command1 = "Shell --no-follow git --no-pager diff --exit-code --stat -p"
+    local command2 = "set ft=diff"
     if vim.tbl_contains(wins, diff_sticky_win) then
       -- run command in that existing terminal window:
       vim.api.nvim_set_current_win(diff_sticky_win)
-      vim.cmd(command)
+      vim.cmd(command1)
+      vim.cmd(command2)
     else
       -- open a new terminal window:
       vim.cmd.vsplit()
-      vim.cmd(command)
+      vim.cmd(command1)
+      vim.cmd(command2)
       -- TODO: any benefits in using nvim_open_term()?
       diff_sticky_win = vim.api.nvim_get_current_win()
     end
@@ -1125,8 +1128,13 @@ end
 -- vim.keymap.set('n', ';:', SinaStuff.run_command_in_current_line, { noremap = true, desc = "Sina: run command in current line" })
 
 -- use <c-t>n to go to the next tab, similar to <c-w>w
-vim.keymap.set('n', '<c-t>p', function() vim.cmd('tabprevious') end, { noremap = true, desc = "Sina: prev tab" })
-vim.keymap.set('n', '<c-t>n', function() vim.cmd('tabnext') end, { noremap = true, desc = "Sina: next tab" })
+vim.keymap.set('n', '<c-t>h', function() vim.cmd('tabprevious') end, { noremap = true, desc = "Sina: prev tab" })
+vim.keymap.set('n', '<c-t>l', function() vim.cmd('tabnext') end, { noremap = true, desc = "Sina: next tab" })
+
+vim.keymap.set('n', ';s', function() vim.api.nvim_feedkeys(':Shell ', 'n', false) end, { noremap = true, desc = 'shellpad: prepare shell command' })
+
+-- vim.keymap.set('n', '<c-s>', function() vim.cmd('tabprevious') end, { noremap = true, desc = "Sina: prev tab" })
+-- vim.keymap.set('n', '<c-f>', function() vim.cmd('tabnext') end, { noremap = true, desc = "Sina: next tab" })
 
 vim.keymap.set('n', ';ts', SinaStuff.open_search_matches, { noremap = true, desc = "Sina: search in new tab" })
 vim.keymap.set('n', ';tq', function() vim.cmd('tabclose') end, { noremap = true, desc = "Sina: close tab" })
