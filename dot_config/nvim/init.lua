@@ -91,6 +91,13 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sc', require('shellpad').telescope_history_search(), { desc = '[S]earch [C]ommands' })
     end,
   },
+  {
+    "filepad/filepad.nvim",
+    dev = vim.fn.hostname() == "personalbox",
+    config = function(opts)
+      require('filepad').setup(opts)
+    end,
+  },
   -- {
   --   "siadat/animated-resize.nvim",
   --   opts = {},
@@ -350,14 +357,14 @@ require('lazy').setup({
     },
   },
 
-  {
-    -- Add indentation guides even on blank lines
-    'lukas-reineke/indent-blankline.nvim',
-    -- Enable `lukas-reineke/indent-blankline.nvim`
-    -- See `:help ibl`
-    main = 'ibl',
-    opts = {},
-  },
+  -- {
+  --   -- Add indentation guides even on blank lines
+  --   'lukas-reineke/indent-blankline.nvim',
+  --   -- Enable `lukas-reineke/indent-blankline.nvim`
+  --   -- See `:help ibl`
+  --   main = 'ibl',
+  --   opts = {},
+  -- },
 
   -- "gc" to comment visual regions/lines
   { 'numToStr/Comment.nvim', opts = {} },

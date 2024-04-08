@@ -19,6 +19,8 @@ alias gsh='git show --stat -p -w' #  -U0
 alias gs='git status'
 alias git-soft-reset='git reset --soft HEAD~'
 
+alias docker-clean='docker system prune -a'
+
 # open results of rg in EDITOR
 function vrg() {
 	$EDITOR -O $(rg -l "$@")
