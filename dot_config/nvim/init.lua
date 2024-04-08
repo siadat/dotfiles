@@ -94,10 +94,9 @@ require('lazy').setup({
   {
     "filepad/filepad.nvim",
     dev = vim.fn.hostname() == "personalbox",
+    enabled = vim.fn.hostname() == "personalbox",
     config = function(opts)
-      if vim.fn.hostname() == "personalbox" then
-        require('filepad').setup(opts)
-      end
+      require('filepad').setup(opts)
     end,
   },
   -- {
