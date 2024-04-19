@@ -61,6 +61,11 @@ bind 'h' select-window -t -1
 bind 'L' swap-window -t +1
 bind 'H' swap-window -t -1
 
+bind -n 'M-s' split-window -h -c "#{pane_current_path}"
+bind -n 'M-v' split-window -v -c "#{pane_current_path}"
+bind -n 'M-Enter' resize-pane -Z
+bind -n 'M-\' resize-pane -Z # for terminals where M-Enter doesn't work
+
 bind -n 'M-l' select-pane -R
 bind -n 'M-h' select-pane -L
 bind -n 'M-j' select-pane -D
@@ -80,9 +85,6 @@ bind j select-pane -D
 # middle of the 9keypad
 bind -n 'M-z' resize-pane -Z
 
-bind -n 'M-s' split-window -h -c "#{pane_current_path}"
-bind -n 'M-v' split-window -v -c "#{pane_current_path}"
-
 # bind -n 'M-s' split-window -v -c "#{pane_current_path}"
 
 bind -n 'M-n' new-window -c "#{pane_current_path}"
@@ -99,8 +101,6 @@ bind -n 'M-i' copy-mode \; send-keys C-u
 
 bind -n 'M-/' copy-mode \; send-keys /
 bind -n M-\; command-prompt
-bind -n 'M-\' resize-pane -Z # M-Enter
-bind -n 'M-Enter' resize-pane -Z # M-Enter
 bind -n 'M-f' resize-pane -Z # M-Enter
 # bind -n 'M-d' send-keys C-d
 
