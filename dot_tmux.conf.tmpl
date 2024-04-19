@@ -58,25 +58,19 @@ bind P command-prompt -p 'save history to filename:' -I '~/tmux.history' 'captur
 
 bind 'l' select-window -t +1
 bind 'h' select-window -t -1
-
 bind 'L' swap-window -t +1
 bind 'H' swap-window -t -1
 
-# bind -n 'M-l' select-window -t +1
-# bind -n 'M-h' select-window -t -1
 bind -n 'M-l' select-pane -R
 bind -n 'M-h' select-pane -L
-
-# bind -n 'M-H' swap-window -t -1
-# bind -n 'M-L' swap-window -t +1
-bind -n 'M-H' resize-pane -L 1
 bind -n 'M-L' resize-pane -R 1
+bind -n 'M-H' resize-pane -L 1
 
+bind -n 'M-j' select-pane -D
+bind -n 'M-k' select-pane -U
 bind -n 'M-J' resize-pane -D 2
 bind -n 'M-K' resize-pane -U 2
 
-bind -n 'M-k' select-pane -U
-bind -n 'M-j' select-pane -D
 bind k select-pane -U
 bind j select-pane -D
 
