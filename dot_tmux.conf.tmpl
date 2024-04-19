@@ -56,25 +56,32 @@ bind P command-prompt -p 'save history to filename:' -I '~/tmux.history' 'captur
 # bind -n 'C-k' select-pane -U
 # bind -n 'C-s' split-window -v -c "#{pane_current_path}"
 
-bind 'l' select-window -t +1
-bind 'h' select-window -t -1
-bind 'L' swap-window -t +1
-bind 'H' swap-window -t -1
-
+# Split
 bind -n 'M-s' split-window -h -c "#{pane_current_path}"
 bind -n 'M-v' split-window -v -c "#{pane_current_path}"
 bind -n 'M-Enter' resize-pane -Z
 bind -n 'M-\' resize-pane -Z # for terminals where M-Enter doesn't work
 
+# Select pane
 bind -n 'M-l' select-pane -R
 bind -n 'M-h' select-pane -L
 bind -n 'M-j' select-pane -D
 bind -n 'M-k' select-pane -U
 
+# Resize pane
 bind -n 'M-L' resize-pane -R 1
 bind -n 'M-H' resize-pane -L 1
 bind -n 'M-J' resize-pane -D 2
 bind -n 'M-K' resize-pane -U 2
+
+# Select window
+bind 'l' select-window -t +1
+bind 'h' select-window -t -1
+
+# Move window
+bind 'L' swap-window -t +1
+bind 'H' swap-window -t -1
+
 
 bind k select-pane -U
 bind j select-pane -D
