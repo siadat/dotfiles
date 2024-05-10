@@ -92,6 +92,10 @@ function build_zig_from_source() {
 			git clone git@github.com:ziglang/zig.git $zig_clone_path
 		fi
 
+		echo "Delete ${zig_clone_path}/build?"
+		read -p "Press enter to continue"
+
+		rm -rf $zig_clone_path/build
 		mkdir -p $zig_clone_path/build
 		cd $zig_clone_path/build
 		time cmake .. -DCMAKE_PREFIX_PATH="$(brew --prefix llvm);$(brew --prefix zstd)"
