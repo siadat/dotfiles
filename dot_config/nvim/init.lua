@@ -82,7 +82,19 @@ local python_diagnostic_plugin = {
 }
 
 require('lazy').setup({
-  'HiPhish/nvim-ts-rainbow2',
+  -- {
+  --   "mcchrish/zenbones.nvim",
+  --   dependencies = {
+  --     "rktjmp/lush.nvim",
+  --   },
+  --   config = function()
+  --     if vim.fn.hostname() == "personalbox" then
+  --       vim.cmd [[set background=light]]
+  --       vim.cmd [[colorscheme zenbones]]
+  --     end
+  --   end,
+  -- },
+  -- 'HiPhish/nvim-ts-rainbow2',
   {
     "julienvincent/nvim-paredit",
     config = function()
@@ -267,6 +279,13 @@ require('lazy').setup({
     config = function(opts)
       require('shellpad').setup(opts)
       vim.keymap.set('n', '<leader>sc', require('shellpad').telescope_history_search(), { desc = '[S]earch [C]ommands' })
+    end,
+  },
+  {
+    "treemotion/treemotion.nvim",
+    dev = vim.fn.hostname() == "personalbox",
+    config = function(opts)
+      require('treemotion').setup(opts)
     end,
   },
   {
@@ -486,23 +505,24 @@ require('lazy').setup({
     'ellisonleao/gruvbox.nvim',
     priority = 1000,
     config = function()
-      if vim.fn.hostname() ~= "personalbox" then
-        vim.cmd.colorscheme 'gruvbox'
-      end
+      -- vim.cmd.colorscheme 'gruvbox'
+      -- if vim.fn.hostname() ~= "personalbox" then
+      --   vim.cmd.colorscheme 'gruvbox'
+      -- end
     end,
   },
 
-  {
-    "bluz71/vim-nightfly-colors",
-    name = "nightfly",
-    -- lazy = false,
-    priority = 1000,
-    config = function()
-      if vim.fn.hostname() == "personalbox" then
-        vim.cmd.colorscheme 'nightfly'
-      end
-    end,
-  },
+  -- {
+  --   "bluz71/vim-nightfly-colors",
+  --   name = "nightfly",
+  --   -- lazy = false,
+  --   priority = 1000,
+  --   config = function()
+  --     if vim.fn.hostname() == "personalbox" then
+  --       vim.cmd.colorscheme 'nightfly'
+  --     end
+  --   end,
+  -- },
   -- amongst your other plugins
   -- {'akinsho/toggleterm.nvim', version = "*", config = true},
   -- or
@@ -577,7 +597,7 @@ require('lazy').setup({
     },
     opts = {
       -- Add languages to be installed here that you want installed for treesitter
-      ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim', 'bash', 'yaml', 'zig', 'clojure' },
+      ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim', 'bash', 'yaml', 'zig', 'clojure', 'rust', 'csv', 'racket' },
 
       -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
       auto_install = false,
@@ -663,17 +683,17 @@ require('lazy').setup({
   -- { import = 'custom.plugins' },
 }, { dev = { path = '~/src/nvim-plugins' } })
 
-require('nvim-treesitter.configs').setup {
-  rainbow = {
-    enable = true,
-    -- list of languages you want to disable the plugin for
-    disable = { 'jsx', 'cpp' }, 
-    -- Which query to use for finding delimiters
-    query = 'rainbow-parens',
-    -- Highlight the entire buffer all at once
-    strategy = require('ts-rainbow').strategy.global,
-  }
-}
+-- require('nvim-treesitter.configs').setup {
+--   rainbow = {
+--     enable = true,
+--     -- list of languages you want to disable the plugin for
+--     disable = { 'jsx', 'cpp' }, 
+--     -- Which query to use for finding delimiters
+--     query = 'rainbow-parens',
+--     -- Highlight the entire buffer all at once
+--     strategy = require('ts-rainbow').strategy.global,
+--   }
+-- }
 
 
 -- [[ Setting options ]]
