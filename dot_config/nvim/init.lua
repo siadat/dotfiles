@@ -284,6 +284,7 @@ require('lazy').setup({
   {
     "treemotion/treemotion.nvim",
     dev = vim.fn.hostname() == "personalbox",
+    enabled = vim.fn.hostname() == "personalbox",
     config = function(opts)
       require('treemotion').setup(opts)
     end,
