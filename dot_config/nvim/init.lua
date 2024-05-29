@@ -271,6 +271,10 @@ require('lazy').setup({
       })
     end
   },
+  {
+    -- Amazing, source: https://youtu.be/uBTRLBU-83A?si=MK1LUI5aAYu830K8&t=6605
+    'gpanders/nvim-parinfer',
+  },
   -- 'Olical/conjure',
   {
     "shellpad/shellpad.nvim",
