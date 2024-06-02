@@ -25,6 +25,14 @@ export PATH=~/src/zig-prebuilt/current:$PATH
 
 function download_and_switch_zig_version () {
 	(
+		# This function downloads a prebuilt version of zig and switches to it
+		# See https://ziglang.org/download/
+		# The URL is fetched from https://ziglang.org/download/index.json
+		#
+		# Usage examples:
+		#   download_and_switch_zig_version master
+		#   download_and_switch_zig_version 0.12.0
+
 		set -e
 		mkdir -p ~/src/zig-prebuilt
 		cd ~/src/zig-prebuilt
