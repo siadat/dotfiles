@@ -18,8 +18,11 @@ alias gdc='git diff --stat -p -w --cached' # -U0
 alias gsh='git show --stat -p -w' #  -U0
 alias gs='git status'
 alias git-soft-reset='git reset --soft HEAD~'
-alias jq-escape-piped='jq -R -s .'
+
+alias jq-escape-piped='jq -R -s .' # Usage: echo "some text" | jq-escape-piped
 function jq-escape () {
+	# Usage: jq-escape "some text"
+	# It returns "some text" # (Note the double-quotes around the output)
 	jq -n --arg text "$1" '$text'
 }
 
@@ -43,8 +46,6 @@ function download_and_switch_zig_version () {
 		VER="${1:-master}" # master 0.12.0 0.11.0
 		JQQ=".[$(jq-escape "$VER")][$(jq-escape "x86_64-linux")].tarball"
 		URL="$(curl -s https://ziglang.org/download/index.json | jq -r "$JQQ")"
-		# old JQQ=".[$(echo -n "$VER" | jq-escape-piped)][$(echo -n x86_64-linux | jq-escape-piped)].tarball"
-		# old URL="$(curl -s https://ziglang.org/download/index.json | jq -r '.["'"${VER}"'"]["x86_64-linux"].tarball')"
 
 		# DIR is the name of the extracted directory
 		DIR="$(basename "${URL%.tar.xz}")"
