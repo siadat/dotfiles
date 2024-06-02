@@ -21,6 +21,36 @@ alias git-soft-reset='git reset --soft HEAD~'
 
 alias docker-clean='docker system prune -a'
 
+export PATH=~/src/zig-prebuilt/current:$PATH
+
+function download_and_switch_zig_version () {
+	(
+		set -e
+		mkdir -p ~/src/zig-prebuilt
+		cd ~/src/zig-prebuilt
+		VER="${1:-master}" # master 0.12.0 0.11.0
+		URL="$(curl -s https://ziglang.org/download/index.json | jq -r '.["'"${VER}"'"]["x86_64-linux"].tarball')"
+
+		# DIR is the name of the extracted directory
+		DIR="$(basename "${URL%.tar.xz}")"
+
+		if [ -e "$DIR" ]; then
+			echo "Already downloaded ${VER} in $(abspath $DIR)"
+		else
+			wget -O zig.tar.xz -c "$URL"
+			tar xvf zig.tar.xz
+			rm zig.tar.xz
+			if [ ! -e "$DIR" ]; then
+				echo "Expected to find $DIR after extracting $URL but it was not found"
+				exit 1
+			fi
+		fi
+		rm current
+		ln -s "$DIR" current
+		ls -lash .
+	)
+}
+
 # open results of rg in EDITOR
 function vrg() {
 	$EDITOR -O $(rg -l "$@")
