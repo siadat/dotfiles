@@ -714,7 +714,7 @@ vim.wo.relativenumber = true
 vim.wo.wrap = false
 
 -- Enable mouse mode
-vim.o.mouse = ''
+vim.o.mouse = 'n' -- only used for scrolling. I don't want double click to go to visual mode, I want double click to select text in Terminal (for copying)
 
 -- Sync clipboard between OS and Neovim.
 --  Remove this option if you want your OS clipboard to remain independent.
@@ -985,6 +985,7 @@ vim.o.wrapscan = false
 vim.o.inccommand = 'split'
 vim.wo.signcolumn = 'no'
 vim.opt.iskeyword:append("-") -- Same as 'set iskeyword+="-"' in Neovim, ie add - to the list of word characters
+vim.opt.iskeyword:append("$")
 
 local SinaStuff = {}
 
