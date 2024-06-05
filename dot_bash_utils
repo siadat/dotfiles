@@ -46,6 +46,7 @@ function download_and_switch_zig_version () {
 		VER="${1:-master}" # master 0.12.0 0.11.0
 		JQQ=".[$(jq-escape "$VER")][$(jq-escape "x86_64-linux")].tarball"
 		URL="$(curl -s https://ziglang.org/download/index.json | jq -r "$JQQ")"
+		echo "URL = $URL"
 
 		# DIR is the name of the extracted directory
 		DIR="$(basename "${URL%.tar.xz}")"
