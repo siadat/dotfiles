@@ -715,7 +715,7 @@ vim.wo.relativenumber = true
 vim.wo.wrap = false
 
 -- Enable mouse mode
--- vim.o.mouse = 'n' -- only used for scrolling. I don't want double click to go to visual mode, I want double click to select text in Terminal (for copying)
+vim.o.mouse = ''
 
 -- Sync clipboard between OS and Neovim.
 --  Remove this option if you want your OS clipboard to remain independent.
