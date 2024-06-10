@@ -714,10 +714,9 @@ vim.wo.number = true
 vim.wo.relativenumber = true
 vim.wo.wrap = false
 
--- Enable mouse mode
-vim.o.mouse = ''
 vim.keymap.set('n', '<ScrollWheelUp>', '2<c-y>') -- I think this only works when mouse='n'
 vim.keymap.set('n', '<ScrollWheelDown>', '2<c-e>') -- I think this only works when mouse='n'
+vim.o.mouse = ''
 
 -- Sync clipboard between OS and Neovim.
 --  Remove this option if you want your OS clipboard to remain independent.
