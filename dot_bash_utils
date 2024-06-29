@@ -18,6 +18,7 @@ alias gdc='git diff --stat -p -w --cached' # -U0
 alias gsh='git show --stat -p -w' #  -U0
 alias gs='git status'
 alias git-soft-reset='git reset --soft HEAD~'
+alias k='kubectl'
 
 alias jq-escape-piped='jq -R -s .' # Usage: echo "some text" | jq-escape-piped
 function jq-escape () {
