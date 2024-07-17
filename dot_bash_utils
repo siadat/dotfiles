@@ -76,13 +76,20 @@ function vrg() {
 }
 
 function capture () {
+	# this is the same as `cat-pane 0 > ${out} && nvim ${out}`
 	(
 		local out;
 		out="$(mktemp --tmpdir=. --suffix=.txt)";
-		tmux capture-pane -J -S- -b mybuf;
-		tmux save-buffer -b mybuf "${out}";
+		tmux capture-pane -J -S- -p > ${out};
 		echo "${out}";
 		nvim "${out}"
+	)
+}
+
+function cat-pane () {
+	(
+		pane=$1
+		tmux capture-pane -J -S- -t $pane -p
 	)
 }
 
