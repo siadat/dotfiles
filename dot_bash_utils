@@ -20,6 +20,19 @@ alias gs='git status'
 alias git-soft-reset='git reset --soft HEAD~'
 alias k='kubectl'
 
+function vgs {
+	# grep -v '^??' ignores untracked files
+	nvim -O $(git status --porcelain | grep -v '^??' | awk '{print $2}')
+}
+
+function vgd {
+	nvim -O $(git diff --name-only)
+}
+
+function vgdc {
+	nvim -O $(git diff --cached --name-only)
+}
+
 alias jq-escape-piped='jq -R -s .' # Usage: echo "some text" | jq-escape-piped
 function jq-escape () {
 	# Usage: jq-escape "some text"
@@ -236,4 +249,13 @@ function commit() {
 		EDITOR='nvim -O +"vs '$tempfile'" +"r!git diff --stat --cached -p" +"set nomodified" +"normal gg" +"wincmd h"'
 		git commit -a
 	)
+}
+
+function sina-watch () {
+	while :; do
+		clear
+		date
+		bash -c "source ~/.bash_utils; $@" | nl
+		sleep 2s
+	done
 }
