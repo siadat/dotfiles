@@ -1011,7 +1011,7 @@ vim.o.linebreak = true -- wrap at word boundaries, insead of in the middle of a 
 vim.o.wrapscan = false
 vim.o.inccommand = 'split'
 vim.wo.signcolumn = 'no'
-vim.opt.iskeyword:append("-") -- Same as 'set iskeyword+="-"' in Neovim, ie add - to the list of word characters
+vim.opt.iskeyword:append("-") -- Same as 'set iskeyword+=-' in Neovim, ie add - to the list of word characters
 vim.opt.iskeyword:append("$")
 
 local SinaStuff = {}
