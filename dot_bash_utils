@@ -25,12 +25,30 @@ function vgs {
 	nvim -O $(git status --porcelain | grep -v '^??' | awk '{print $2}')
 }
 
+# function vgd {
+# 	nvim -O $(git diff --name-only)
+# }
+#
+# function vgdc {
+# 	nvim -O $(git diff --cached --name-only)
+# }
+
 function vgd {
-	nvim -O $(git diff --name-only)
+	commands="echo"
+	while IFS= read -r file; do
+		commands="$commands | tabnew $file | Gvdiff"
+	done < <(git diff --name-only)
+		
+	nvim -O -c "$commands"
 }
 
 function vgdc {
-	nvim -O $(git diff --cached --name-only)
+	commands="echo"
+	while IFS= read -r file; do
+		commands="$commands | tabnew $file | Gvdiff HEAD"
+	done < <(git diff --name-only --cached)
+		
+	nvim -O -c "$commands"
 }
 
 alias jq-escape-piped='jq -R -s .' # Usage: echo "some text" | jq-escape-piped
