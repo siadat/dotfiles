@@ -271,8 +271,7 @@ function commit() {
 
 function sina-watch () {
 	while :; do
-		clear
-		date
+		output=$(mktemp --suffix .watch)
 		bash -c "source ~/.bash_utils; $@" | nl
 		sleep 2s
 	done
