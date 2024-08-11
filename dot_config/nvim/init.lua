@@ -1858,3 +1858,164 @@ SinaStuff.animate_width = function(win, keyframes, current)
     SinaStuff.animate_width(win, keyframes, current + 1)
   end, 16)
 end
+
+SinaStuff.enable_session_history = function()
+  local group = vim.api.nvim_create_augroup('SinaSessionHistory', { clear = true })
+
+  local dir = vim.fn.stdpath("state") .. "/session-history/"
+  local tree_filename = dir .. string.format("session-tree-%d-%d.json", vim.loop.hrtime(), vim.fn.getpid())
+  local clear_autocmds = function() end
+  local setup_autocmds = function() end
+
+  local tree = {
+    children = {},
+    cursor = {},
+  }
+  if vim.fn.isdirectory(dir) ~= 1 then
+    vim.fn.mkdir(dir, "p")
+  end
+  if vim.fn.filereadable(tree_filename) == 1 then
+    local tree_str = vim.fn.readfile(tree_filename)
+    tree = vim.json.decode(tree_str[1])
+  end
+  -- print(vim.inspect(tree))
+
+  local is_floating = function(win_id)
+    print("INFO: win_id", vim.inspect(win_id))
+    if not vim.api.nvim_win_is_valid(win_id) then
+      return false
+    end
+    local config = vim.api.nvim_win_get_config(win_id)
+    -- print("INFO: config:", vim.inspect(config))
+    return config.relative ~= "" -- A non-empty 'relative' field indicates a floating window
+  end
+
+  local on_session_changed = function(event)
+    -- print("INFO: session changed event=", event.event)
+    -- print("INFO: session changed", vim.inspect(event))
+    -- if vim.g.SessionLoaded == 1 then
+    --   return
+    -- end
+
+    -- event.file is a string representing the window id
+    if event.event == "WinClosed" then
+      print("INFO: WinClosed", vim.inspect(event))
+      local win_id = tonumber(event.file)
+      if is_floating(win_id) then
+	return -- Exit if the window is floating
+      end
+    end
+
+    local filename = dir .. string.format("session-source-%d-%d.vim", vim.loop.hrtime(), vim.fn.getpid())
+    local new_node = {
+      filename = filename,
+      children = {},
+    }
+    vim.cmd.mksession(filename)
+    -- for each index in tree.curosr:
+    local current_node = tree
+    for i = 1,#tree.cursor do
+      local idx = tree.cursor[i]
+      current_node = current_node.children[idx]
+    end
+    current_node.children[#current_node.children+1] = new_node
+    tree.cursor[#tree.cursor+1] = 1 -- 1-based index
+    --print("INFO: cursor after change", vim.inspect(tree.cursor))
+
+    local tree_str = vim.json.encode(tree)
+    vim.fn.writefile({tree_str}, tree_filename)
+  end
+
+  local do_undo = function()
+    clear_autocmds()
+    vim.defer_fn(function()
+      setup_autocmds()
+    end, 1)
+
+    -- TODO: vim.fn.source the session at cursor
+    local current_node = tree
+    for i = 1,(#tree.cursor-1) do
+      local idx = tree.cursor[i]
+      current_node = current_node.children[idx]
+    end
+    if current_node.filename == nil then
+      print("No session to undo")
+      return
+    end
+    vim.cmd.source(current_node.filename)
+    -- vim.cmd("silent source " .. current_node.filename)
+    -- vim.api.nvim_command("source " .. current_node.filename)
+
+    table.remove(tree.cursor, #tree.cursor)
+    --print("INFO: cursor after undo", vim.inspect(tree.cursor))
+
+    local tree_str = vim.json.encode(tree)
+    vim.fn.writefile({tree_str}, tree_filename)
+  end
+
+  local do_redo = function()
+    clear_autocmds()
+    vim.defer_fn(function()
+      setup_autocmds()
+    end, 1)
+
+    tree.cursor[#tree.cursor+1] = 1 -- 1-based index
+
+    local current_node = tree
+    for i = 1,#tree.cursor do
+      local idx = tree.cursor[i]
+      current_node = current_node.children[idx]
+    end
+    -- current_node = current_node.children[#current_node.children]
+    if current_node == nil then
+      print("No session to redo")
+      -- remove what we added in the lines above
+      table.remove(tree.cursor, #tree.cursor)
+      return
+    end
+    vim.cmd.source(current_node.filename)
+    -- vim.cmd("silent source " .. current_node.filename)
+    -- vim.api.nvim_command("source " .. current_node.filename)
+
+
+    local tree_str = vim.json.encode(tree)
+    vim.fn.writefile({tree_str}, tree_filename)
+  end
+
+  clear_autocmds = function()
+    vim.api.nvim_clear_autocmds({ group = group })
+  end
+
+  local throttled_timer = nil
+  local throttled_callback = function(event)
+    if throttled_timer ~= nil then
+      return
+    end
+    throttled_timer = vim.defer_fn(function()
+      on_session_changed(event)
+      throttled_timer = nil
+    end, 100)
+  end
+
+  setup_autocmds = function()
+    -- group = vim.api.nvim_create_augroup('SinaSessionHistory', { clear = true })
+    vim.keymap.set('n', '<c-w>u', do_undo, { noremap = true, desc = "Sina: undo session" })
+    vim.keymap.set('n', '<c-w>U', do_redo, { noremap = true, desc = "Sina: redo session" })
+    -- on all events that means a change in window or buffer, eg split, resize, etc
+    -- vim.api.nvim_create_autocmd({"WinNew", "WinClose", "WinResized"}, {
+    vim.api.nvim_create_autocmd({"WinNew", "WinClosed", "WinEnter", "WinResized"}, {
+      -- TODO: wait for a few milliseconds before running the callback and perform the callback only once for multiple consecutive events
+      callback = throttled_callback,
+      group = group,
+    })
+  end
+
+  setup_autocmds()
+
+  -- This is a hack to save the initial session without adding more events to autocmd
+  vim.defer_fn(function()
+    on_session_changed({event = ""})
+  end, 5)
+end
+
+SinaStuff.enable_session_history()
