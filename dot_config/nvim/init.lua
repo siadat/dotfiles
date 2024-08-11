@@ -1912,14 +1912,15 @@ SinaStuff.enable_session_history = function()
       children = {},
     }
     vim.cmd.mksession(filename)
-    -- for each index in tree.curosr:
+    -- for each index in tree.cursor:
     local current_node = tree
     for i = 1,#tree.cursor do
       local idx = tree.cursor[i]
       current_node = current_node.children[idx]
     end
-    current_node.children[#current_node.children+1] = new_node
-    tree.cursor[#tree.cursor+1] = 1 -- 1-based index
+    local idx = #current_node.children + 1
+    current_node.children[idx] = new_node
+    tree.cursor[#tree.cursor+1] = idx
     --print("INFO: cursor after change", vim.inspect(tree.cursor))
 
     local tree_str = vim.json.encode(tree)
@@ -1959,24 +1960,24 @@ SinaStuff.enable_session_history = function()
       setup_autocmds()
     end, 1)
 
-    tree.cursor[#tree.cursor+1] = 1 -- 1-based index
-
     local current_node = tree
     for i = 1,#tree.cursor do
       local idx = tree.cursor[i]
       current_node = current_node.children[idx]
     end
-    -- current_node = current_node.children[#current_node.children]
+
+    local idx = #current_node.children
+    tree.cursor[#tree.cursor+1] = idx -- 1-based index
+    current_node = current_node.children[idx]
+
     if current_node == nil then
       print("No session to redo")
-      -- remove what we added in the lines above
-      table.remove(tree.cursor, #tree.cursor)
       return
     end
+
     vim.cmd.source(current_node.filename)
     -- vim.cmd("silent source " .. current_node.filename)
     -- vim.api.nvim_command("source " .. current_node.filename)
-
 
     local tree_str = vim.json.encode(tree)
     vim.fn.writefile({tree_str}, tree_filename)
