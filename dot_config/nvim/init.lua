@@ -1864,8 +1864,13 @@ SinaStuff.enable_session_history = function()
 
   local dir = vim.fn.stdpath("state") .. "/session-history/"
   local tree_filename = dir .. string.format("session-tree-%d-%d.json", vim.loop.hrtime(), vim.fn.getpid())
-  local clear_autocmds = function() end
-  local setup_autocmds = function() end
+  function clear_autocmds()
+    vim.api.nvim_clear_autocmds({ group = group })
+  end
+  local setup_autocmds = function()
+    -- not implemented yet, throw error:
+    error("Not implemented yet")
+  end
 
   local tree = {
     children = {},
@@ -1891,7 +1896,7 @@ SinaStuff.enable_session_history = function()
   end
 
   local on_session_changed = function(event)
-    -- print("INFO: session changed event=", event.event)
+    print("INFO: session changed event=", event.event)
     -- print("INFO: session changed", vim.inspect(event))
     -- if vim.g.SessionLoaded == 1 then
     --   return
@@ -1912,7 +1917,6 @@ SinaStuff.enable_session_history = function()
       children = {},
     }
     vim.cmd.mksession(filename)
-    -- for each index in tree.cursor:
     local current_node = tree
     for i = 1,#tree.cursor do
       local idx = tree.cursor[i]
@@ -1921,7 +1925,6 @@ SinaStuff.enable_session_history = function()
     local idx = #current_node.children + 1
     current_node.children[idx] = new_node
     tree.cursor[#tree.cursor+1] = idx
-    --print("INFO: cursor after change", vim.inspect(tree.cursor))
 
     local tree_str = vim.json.encode(tree)
     vim.fn.writefile({tree_str}, tree_filename)
@@ -1933,7 +1936,6 @@ SinaStuff.enable_session_history = function()
       setup_autocmds()
     end, 1)
 
-    -- TODO: vim.fn.source the session at cursor
     local current_node = tree
     for i = 1,(#tree.cursor-1) do
       local idx = tree.cursor[i]
@@ -1966,14 +1968,18 @@ SinaStuff.enable_session_history = function()
       current_node = current_node.children[idx]
     end
 
-    local idx = #current_node.children
-    tree.cursor[#tree.cursor+1] = idx -- 1-based index
-    current_node = current_node.children[idx]
-
     if current_node == nil then
       print("No session to redo")
       return
     end
+    if #current_node.children == 0 then
+      print("No session to redo")
+      return
+    end
+
+    local idx = #current_node.children
+    tree.cursor[#tree.cursor+1] = idx
+    current_node = current_node.children[idx]
 
     vim.cmd.source(current_node.filename)
     -- vim.cmd("silent source " .. current_node.filename)
@@ -1983,15 +1989,12 @@ SinaStuff.enable_session_history = function()
     vim.fn.writefile({tree_str}, tree_filename)
   end
 
-  clear_autocmds = function()
-    vim.api.nvim_clear_autocmds({ group = group })
-  end
-
   local throttled_timer = nil
   local throttled_callback = function(event)
     if throttled_timer ~= nil then
       return
     end
+    print("INFO: wrapper session changed event=", event.event)
     throttled_timer = vim.defer_fn(function()
       on_session_changed(event)
       throttled_timer = nil
@@ -2012,6 +2015,7 @@ SinaStuff.enable_session_history = function()
   end
 
   setup_autocmds()
+  -- clear_autocmds()
 
   -- This is a hack to save the initial session without adding more events to autocmd
   vim.defer_fn(function()
