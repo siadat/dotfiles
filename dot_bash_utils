@@ -55,6 +55,15 @@ function vgdc {
 	nvim -O -c "$commands"
 }
 
+function vgsh {
+	commands="echo"
+	while IFS= read -r file; do
+		commands="$commands | tabnew $file | Gvdiff HEAD~1"
+	done < <(git diff --name-only HEAD~1)
+		
+	nvim -O -c "$commands"
+}
+
 alias jq-escape-piped='jq -R -s .' # Usage: echo "some text" | jq-escape-piped
 function jq-escape () {
 	# Usage: jq-escape "some text"
