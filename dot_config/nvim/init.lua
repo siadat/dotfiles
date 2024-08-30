@@ -1862,7 +1862,8 @@ end
 SinaStuff.enable_session_history = function()
   local group = vim.api.nvim_create_augroup('SinaSessionHistory', { clear = true })
 
-  local dir = vim.fn.stdpath("state") .. "/session-history/"
+  -- local dir = vim.fn.stdpath("state") .. "/session-history/"
+  local dir = "/dev/shm/" .. os.getenv("USER") .. "-session-history/"
   local tree_filename = dir .. string.format("session-tree-%d-%d.json", vim.loop.hrtime(), vim.fn.getpid())
   function clear_autocmds()
     vim.api.nvim_clear_autocmds({ group = group })
@@ -2007,7 +2008,8 @@ SinaStuff.enable_session_history = function()
     vim.keymap.set('n', '<c-w>U', do_redo, { noremap = true, desc = "Sina: redo session" })
     -- on all events that means a change in window or buffer, eg split, resize, etc
     -- vim.api.nvim_create_autocmd({"WinNew", "WinClose", "WinResized"}, {
-    vim.api.nvim_create_autocmd({"WinNew", "WinClosed", "WinEnter", "WinResized"}, {
+    -- "WinEnter", 
+    vim.api.nvim_create_autocmd({"WinNew", "WinClosed", "WinResized"}, {
       -- TODO: wait for a few milliseconds before running the callback and perform the callback only once for multiple consecutive events
       callback = throttled_callback,
       group = group,

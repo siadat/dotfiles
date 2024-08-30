@@ -20,6 +20,10 @@ alias gs='git status'
 alias git-soft-reset='git reset --soft HEAD~'
 alias k='kubectl'
 
+function jq-leaves {
+	jq -r 'paths(scalars) as $p | "\($p | join(".")): \(. as $x | getpath($p))"'
+}
+
 function vgs {
 	# grep -v '^??' ignores untracked files
 	nvim -O $(git status --porcelain | grep -v '^??' | awk '{print $2}')
