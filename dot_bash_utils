@@ -38,28 +38,31 @@ function vgs {
 # }
 
 function vgd {
-	commands="echo"
+	commands="echo" # this is a hack to start the command with a pipe
 	while IFS= read -r file; do
 		commands="$commands | tabnew $file | Gvdiff"
 	done < <(git diff --name-only)
+	commands="$commands | tabfirst | tabclose"
 		
 	nvim -O -c "$commands"
 }
 
 function vgdc {
-	commands="echo"
+	commands="echo" # this is a hack to start the command with a pipe
 	while IFS= read -r file; do
 		commands="$commands | tabnew $file | Gvdiff HEAD"
 	done < <(git diff --name-only --cached)
+	commands="$commands | tabfirst | tabclose"
 		
 	nvim -O -c "$commands"
 }
 
 function vgsh {
-	commands="echo"
+	commands="echo" # this is a hack to start the command with a pipe
 	while IFS= read -r file; do
 		commands="$commands | tabnew $file | Gvdiff HEAD~1"
 	done < <(git diff --name-only HEAD~1)
+	commands="$commands | tabfirst | tabclose"
 		
 	nvim -O -c "$commands"
 }
