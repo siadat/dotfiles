@@ -38,10 +38,11 @@ function vgs {
 # }
 
 function vgd {
+	other=$1
 	commands="echo" # this is a hack to start the command with a pipe
 	while IFS= read -r file; do
-		commands="$commands | tabnew $file | Gvdiff"
-	done < <(git diff --name-only)
+		commands="$commands | tabnew $file | Gvdiff $other"
+	done < <(git diff --name-only $other)
 	commands="$commands | tabfirst | tabclose"
 		
 	nvim -O -c "$commands"
