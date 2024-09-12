@@ -105,7 +105,7 @@ function download_and_switch_zig_version () {
 		if [ -e "$DIR" ]; then
 			echo "Already downloaded ${VER} in $(abspath $DIR)"
 		else
-			wget -O zig.tar.xz -c "$URL"
+			curl -o zig.tar.xz "$URL"
 			tar xvf zig.tar.xz
 			rm zig.tar.xz
 			if [ ! -e "$DIR" ]; then
