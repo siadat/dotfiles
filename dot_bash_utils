@@ -21,7 +21,6 @@ alias gdc='git diff --stat -p -w --cached' # -U0
 alias gsh='git show --stat -p -w' #  -U0
 alias gs='git status'
 alias git-soft-reset='git reset --soft HEAD~'
-alias k='kubectl'
 
 function jq-leaves {
 	jq -r 'paths(scalars) as $p | "\($p | join(".")): \(. as $x | getpath($p))"'
