@@ -24,7 +24,7 @@ set -g default-terminal "tmux-256color"
 set -ga terminal-overrides ",*256col*:Tc"
 
 
-{{ if eq .chezmoi.hostname "personalbox" }}
+{{ if or (eq .chezmoi.hostname "personalbox") (eq .chezmoi.hostname "personalbox-dedicated") }}
     # set-option -g status-right "#{=22:pane_title} | #(python ~/src/affirmations/main.py --duration 3600 --source-file ~/src/affirmations/affirmations.json) 💚 %H:%M %a %d-%b-%Y"
     # set-option -g status-right "#(python ~/src/affirmations/main.py --duration 3600 --source-file ~/src/affirmations/affirmations.json) @SinaSiadat 💚"
 
