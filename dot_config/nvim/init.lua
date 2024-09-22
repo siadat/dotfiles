@@ -2014,3 +2014,32 @@ SinaStuff.enable_session_history = function()
 end
 
 SinaStuff.enable_session_history()
+
+SinaStuff.setup_code_navigation = function()
+  vim.api.nvim_create_user_command("SinaSetupCodeNavigation", function()
+    -- create a virtual text on the current line of the current buffer
+    local bufnr = vim.api.nvim_get_current_buf()
+    local winnr = vim.api.nvim_get_current_win()
+    local line = vim.fn.line(".")
+    local col = vim.fn.col(".")
+    local text = "Hello, world!"
+
+    local mark_ns = vim.api.nvim_create_namespace('sina-code-navigation')
+    local mark_id = vim.api.nvim_buf_set_extmark(0, mark_ns, line-1, col-1, {
+      virt_text = {{text, "Comment"}},
+      virt_text_pos = "overlay",
+      priority = 10,
+    })
+
+    vim.lsp.buf_request(0, 'textDocument/documentSymbol', {
+      textDocument = vim.lsp.util.make_text_document_params(),
+    }, function(err, result)
+      print(vim.inspect(result[1]))
+    end)
+
+    vim.lsp.buf.references()
+
+  end, { nargs = 0 })
+end
+
+SinaStuff.setup_code_navigation()
