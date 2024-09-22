@@ -113,7 +113,7 @@ function download_and_switch_zig_version () {
 				exit 1
 			fi
 		fi
-		rm current
+		rm -rf current
 		ln -s "$DIR" current
 		ls -lash .
 		zig version
