@@ -1983,7 +1983,7 @@ SinaStuff.enable_session_history = function()
     if throttled_timer ~= nil then
       return
     end
-    print("INFO: wrapper session changed event=", event.event)
+    -- print("INFO: wrapper session changed event=", event.event)
     throttled_timer = vim.defer_fn(function()
       on_session_changed(event)
       throttled_timer = nil
