@@ -1885,7 +1885,7 @@ SinaStuff.enable_session_history = function()
   end
 
   local on_session_changed = function(event)
-    print("INFO: session changed event=", event.event)
+    -- print("INFO: session changed event=", event.event)
     -- print("INFO: session changed", vim.inspect(event))
     -- if vim.g.SessionLoaded == 1 then
     --   return
