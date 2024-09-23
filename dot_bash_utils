@@ -295,3 +295,15 @@ function sina-watch () {
 		sleep 2s
 	done
 }
+
+function git-check-out-pull-request() {
+    pr="$1"
+    branch="$2"
+    git fetch origin pull/"$pr"/head:"$branch"
+    git checkout "$branch"
+}
+
+function git-undo-last-commit() {
+    git show --stat -p > last-commit.diff
+    git reset HEAD~
+}
