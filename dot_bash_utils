@@ -284,6 +284,15 @@ function commit() {
 		tempfile=$(mktemp --suffix .patch)
 		# have an editor that opens cached diff in a vertical split
 		EDITOR='nvim -O +"vs '$tempfile'" +"r!git diff --stat --cached -p" +"set nomodified" +"normal gg" +"wincmd h"'
+		git commit
+	)
+}
+
+function commit-all() {
+	(
+		tempfile=$(mktemp --suffix .patch)
+		# have an editor that opens cached diff in a vertical split
+		EDITOR='nvim -O +"vs '$tempfile'" +"r!git diff --stat --cached -p" +"set nomodified" +"normal gg" +"wincmd h"'
 		git commit -a
 	)
 }
