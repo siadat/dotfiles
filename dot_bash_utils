@@ -14,7 +14,6 @@ alias grep='grep --color'
 alias abspath='readlink -f'
 
 export PATH=$PATH:$HOME/go/bin
-export GOPATH=$HOME/go
 
 alias pull='git pull origin HEAD'
 alias push='git push origin HEAD'
