@@ -133,7 +133,7 @@ function capture () {
 		out="$(mktemp --tmpdir=. --suffix=.txt)";
 		tmux capture-pane -J -S- -p > ${out};
 		echo "${out}";
-		nvim "${out}"
+		nvim +'normal G' "${out}"
 	)
 }
 
