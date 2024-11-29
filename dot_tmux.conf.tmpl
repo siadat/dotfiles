@@ -15,7 +15,8 @@ set-option -g mouse off
 set-option -g base-index 1
 set-option -g pane-base-index 1
 set-option -g xterm-keys on
-set-option -g history-limit 100000
+set-option -g history-limit 1000000
+set-option -g set-clipboard on # This is needed to allow clipboard from inside tmux (e.g. neovim) to be passed to the system running tmux (e.g. macos)
 
 set -g status on
 
