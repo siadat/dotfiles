@@ -1904,7 +1904,7 @@ SinaStuff.enable_session_history = function()
   -- print(vim.inspect(tree))
 
   local is_floating = function(win_id)
-    print("INFO: win_id", vim.inspect(win_id))
+    -- print("INFO: win_id", vim.inspect(win_id))
     if not vim.api.nvim_win_is_valid(win_id) then
       return false
     end
@@ -1922,7 +1922,7 @@ SinaStuff.enable_session_history = function()
 
     -- event.file is a string representing the window id
     if event.event == "WinClosed" then
-      print("INFO: WinClosed", vim.inspect(event))
+      -- print("INFO: WinClosed", vim.inspect(event))
       local win_id = tonumber(event.file)
       if is_floating(win_id) then
 	return -- Exit if the window is floating
